@@ -1,0 +1,21 @@
+{
+  "name": "wuxia-slot-fighter",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "build:exe": "powershell -ExecutionPolicy Bypass -File ./build-single-exe.ps1",
+    "test": "vitest run",
+    "preview": "vite preview --host 127.0.0.1"
+  },
+  "dependencies": {
+    "phaser": "^3.90.0",
+    "vite": "^6.0.7",
+    "typescript": "^5.7.2"
+  },
+  "devDependencies": {
+    "vitest": "^2.1.8"
+  }
+}
