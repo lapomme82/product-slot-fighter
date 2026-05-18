@@ -254,6 +254,11 @@ h2 {
   border-color: #facc15;
 }
 
+.select-card.awakened {
+  border-color: #a855f7;
+  box-shadow: 0 0 0 2px rgba(168, 85, 247, 0.18), 0 16px 36px rgba(0, 0, 0, 0.32);
+}
+
 .select-card img {
   width: 72px;
   height: 72px;
@@ -433,6 +438,25 @@ h2 {
   line-height: 1.45;
 }
 
+.select-profile-actions {
+  display: grid;
+  grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.05fr);
+  gap: 10px;
+}
+
+.awaken-select-button {
+  border-color: #c084fc;
+  background: linear-gradient(180deg, #312e81, #581c87);
+  color: #f5e8ff;
+}
+
+.awaken-select-button.active {
+  border-color: #facc15;
+  background: linear-gradient(180deg, #92400e, #7f1d1d);
+  color: #fef08a;
+  box-shadow: 0 0 20px rgba(250, 204, 21, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+
 .entry-list {
   display: grid;
   gap: 8px;
@@ -478,6 +502,25 @@ h2 {
   color: #fff7d6;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.entry-row.awakened {
+  border-color: #a855f7;
+  background: linear-gradient(180deg, #261534, #1a111d);
+}
+
+.awaken-tag {
+  display: inline-grid;
+  place-items: center;
+  margin-left: 6px;
+  border: 1px solid #facc15;
+  border-radius: 999px;
+  padding: 1px 6px;
+  color: #fef08a;
+  font-size: 10px;
+  font-style: normal;
+  line-height: 1.2;
+  vertical-align: 1px;
 }
 
 .entry-row button {
@@ -854,6 +897,10 @@ h2 {
   }
 
   .fighter-pool {
+    grid-template-columns: 1fr;
+  }
+
+  .select-profile-actions {
     grid-template-columns: 1fr;
   }
 

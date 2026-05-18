@@ -122,6 +122,7 @@ export function mountApp(root: HTMLElement, game: Phaser.Game): AppController {
   let currentSeed = makeSeed();
   let selectedFighterId: CharacterId = BASE_FIGHTERS[0].id;
   let entryIds: CharacterId[] = [];
+  let awakenedFighterIds = new Set<CharacterId>();
   let tournament: TournamentState | null = null;
   let replay: TournamentReplay | null = null;
   let completedMatchIds = new Set<string>();
@@ -190,6 +191,7 @@ export function mountApp(root: HTMLElement, game: Phaser.Game): AppController {
     refs.log.innerHTML = "";
     game.registry.remove("battleReplay");
     game.registry.remove("champion");
+    game.registry.remove("awakenedFighterIds");
     stopPhaserScenes();
   }
 
@@ -218,6 +220,7 @@ export function mountApp(root: HTMLElement, game: Phaser.Game): AppController {
     }
     const selected = FIGHTER_BY_ID[selectedFighterId];
     const isRegistered = entryIds.includes(selectedFighterId);
+    const isAwakened = awakenedFighterIds.has(selectedFighterId);
     const canStart = entryIds.length >= 2;
 
     refs.stage.innerHTML = `
@@ -241,14 +244,20 @@ export function mountApp(root: HTMLElement, game: Phaser.Game): AppController {
               <h3 data-select-profile-name>${selected.name}</h3>
               <span data-select-profile-concept>${selected.concept}</span>
             </div>
-            <button data-action="register-entry" data-select-register ${isRegistered ? "disabled" : ""}>${isRegistered ? "등록 완료" : "엔트리 등록"}</button>
+            <div class="select-profile-actions">
+              <button class="awaken-select-button ${isAwakened ? "active" : ""}" data-action="toggle-awaken" data-select-awaken ${selected.selectFinalPortraitPath ? "" : "disabled"}>
+                ${isAwakened ? "각성 선택됨" : "각성 캐릭터 선택"}
+              </button>
+              <button data-action="register-entry" data-select-register ${isRegistered ? "disabled" : ""}>${isRegistered ? "등록 완료" : isAwakened ? "각성 엔트리 등록" : "엔트리 등록"}</button>
+            </div>
           </aside>
           <section class="fighter-pool">
             ${BASE_FIGHTERS.map((fighter) => {
               const active = fighter.id === selectedFighterId;
               const registered = entryIds.includes(fighter.id);
+              const awakened = isAwakenedFighter(fighter.id);
               return `
-                <button class="select-card ${active ? "active" : ""} ${registered ? "registered" : ""}" data-action="select-fighter" data-fighter-id="${fighter.id}">
+                <button class="select-card ${active ? "active" : ""} ${registered ? "registered" : ""} ${awakened ? "awakened" : ""}" data-action="select-fighter" data-fighter-id="${fighter.id}">
                   <img src="${assetUrl(fighter.portraitThumbPath)}" alt="${fighter.title} ${fighter.name}" />
                   <span>
                     <strong>${fighter.title} ${fighter.name}</strong>
@@ -272,6 +281,29 @@ export function mountApp(root: HTMLElement, game: Phaser.Game): AppController {
     `;
     showStaticSelectMedia(selected);
     updateSelectView();
+  }
+
+  function isAwakenedFighter(fighterId: CharacterId) {
+    return awakenedFighterIds.has(fighterId);
+  }
+
+  function getEntryPortraitPath(fighterId: CharacterId, fallbackToThumb = true) {
+    const fighter = FIGHTER_BY_ID[fighterId];
+    if (isAwakenedFighter(fighterId) && fighter.selectFinalPortraitPath) {
+      return fighter.selectFinalPortraitPath;
+    }
+    return fallbackToThumb ? fighter.portraitThumbPath : fighter.portraitPath;
+  }
+
+  function fighterDisplayLabel(fighterId: CharacterId | null) {
+    if (!fighterId) {
+      return fighterLabel(fighterId);
+    }
+    return `${isAwakenedFighter(fighterId) ? "각성 " : ""}${fighterLabel(fighterId)}`;
+  }
+
+  function renderAwakenedTag(fighterId: CharacterId | null) {
+    return fighterId && isAwakenedFighter(fighterId) ? '<em class="awaken-tag">각성</em>' : "";
   }
 
   function getSelectMediaRefs() {
@@ -338,6 +370,47 @@ export function mountApp(root: HTMLElement, game: Phaser.Game): AppController {
     }
   }
 
+  function showSelectFinalImmediately(fighter: Fighter) {
+    const { profileImage, video, finalImage } = getSelectMediaRefs();
+    const layers = [profileImage, video, finalImage].filter(Boolean) as HTMLElement[];
+    for (const layer of layers) {
+      layer.style.transition = "none";
+      layer.classList.remove("is-visible");
+    }
+
+    configureSelectMedia(fighter);
+    finalImage?.classList.add("is-visible");
+    void finalImage?.offsetHeight;
+
+    for (const layer of layers) {
+      layer.style.transition = "";
+    }
+  }
+
+  function showSelectFinalWithTransition(fighter: Fighter, token: number) {
+    const panel = getSelectProfilePanel();
+    const { video } = getSelectMediaRefs();
+    video?.pause();
+    panel?.classList.remove("is-entering");
+    panel?.classList.add("is-switching");
+    setSelectMediaLayer(null);
+
+    selectRevealTimer = window.setTimeout(() => {
+      if (token !== selectRevealToken) {
+        return;
+      }
+
+      showSelectFinalImmediately(fighter);
+      panel?.classList.remove("is-switching");
+      panel?.classList.add("is-entering");
+      window.setTimeout(() => {
+        if (token === selectRevealToken) {
+          panel?.classList.remove("is-entering");
+        }
+      }, SELECT_PROFILE_ENTER_MS);
+    }, SELECT_PROFILE_SWITCH_OUT_MS);
+  }
+
   function showSelectProfileWithTransition(fighter: Fighter, token: number, onShown?: () => void) {
     const panel = getSelectProfilePanel();
     const { video } = getSelectMediaRefs();
@@ -368,6 +441,10 @@ export function mountApp(root: HTMLElement, game: Phaser.Game): AppController {
     if (selectRevealTimer) {
       window.clearTimeout(selectRevealTimer);
       selectRevealTimer = null;
+    }
+    if (isAwakenedFighter(fighter.id)) {
+      showSelectFinalImmediately(fighter);
+      return;
     }
     showSelectProfileImmediately(fighter);
   }
@@ -429,10 +506,10 @@ export function mountApp(root: HTMLElement, game: Phaser.Game): AppController {
       .map((fighterId, index) => {
         const fighter = FIGHTER_BY_ID[fighterId];
         return `
-          <div class="entry-row">
+          <div class="entry-row ${isAwakenedFighter(fighterId) ? "awakened" : ""}">
             <span>${index + 1}</span>
-            <img src="${assetUrl(fighter.portraitThumbPath)}" alt="${fighter.title} ${fighter.name}" />
-            <strong>${fighter.title} ${fighter.name}</strong>
+            <img src="${assetUrl(getEntryPortraitPath(fighterId))}" alt="${fighterDisplayLabel(fighterId)}" />
+            <strong>${fighterDisplayLabel(fighterId)}${renderAwakenedTag(fighterId)}</strong>
             <button data-action="remove-entry" data-fighter-id="${fighter.id}" aria-label="${fighter.title} ${fighter.name} 제거">×</button>
           </div>
         `;
@@ -447,6 +524,7 @@ export function mountApp(root: HTMLElement, game: Phaser.Game): AppController {
 
     const selected = FIGHTER_BY_ID[selectedFighterId];
     const isRegistered = entryIds.includes(selectedFighterId);
+    const isAwakened = isAwakenedFighter(selectedFighterId);
     const canStart = entryIds.length >= 2;
     if (playReveal) {
       playSelectReveal(selected);
@@ -457,6 +535,7 @@ export function mountApp(root: HTMLElement, game: Phaser.Game): AppController {
     const name = refs.stage.querySelector<HTMLElement>("[data-select-profile-name]");
     const concept = refs.stage.querySelector<HTMLElement>("[data-select-profile-concept]");
     const count = refs.stage.querySelector<HTMLElement>("[data-select-count]");
+    const awakenButton = refs.stage.querySelector<HTMLButtonElement>("[data-select-awaken]");
     const registerButton = refs.stage.querySelector<HTMLButtonElement>("[data-select-register]");
     const startButton = refs.stage.querySelector<HTMLButtonElement>("[data-select-start]");
     const entryList = refs.stage.querySelector<HTMLElement>("[data-select-entry-list]");
@@ -473,9 +552,14 @@ export function mountApp(root: HTMLElement, game: Phaser.Game): AppController {
     if (count) {
       count.textContent = `${entryIds.length} / ${BASE_FIGHTERS.length}`;
     }
+    if (awakenButton) {
+      awakenButton.disabled = !selected.selectFinalPortraitPath;
+      awakenButton.classList.toggle("active", isAwakened);
+      awakenButton.textContent = isAwakened ? "각성 선택됨" : "각성 캐릭터 선택";
+    }
     if (registerButton) {
       registerButton.disabled = isRegistered;
-      registerButton.textContent = isRegistered ? "등록 완료" : "엔트리 등록";
+      registerButton.textContent = isRegistered ? "등록 완료" : isAwakened ? "각성 엔트리 등록" : "엔트리 등록";
     }
     if (startButton) {
       startButton.disabled = !canStart;
@@ -489,6 +573,7 @@ export function mountApp(root: HTMLElement, game: Phaser.Game): AppController {
       const registered = entryIds.includes(fighterId);
       card.classList.toggle("active", fighterId === selectedFighterId);
       card.classList.toggle("registered", registered);
+      card.classList.toggle("awakened", isAwakenedFighter(fighterId));
       const badge = card.querySelector("i");
       if (registered && !badge) {
         const entryBadge = document.createElement("i");
@@ -513,14 +598,14 @@ export function mountApp(root: HTMLElement, game: Phaser.Game): AppController {
   }
 
   function renderSeedCell(slot: BracketSlot) {
-    const label = slot.fighterId ? fighterLabel(slot.fighterId) : "부전승";
-    const portrait = slot.fighterId ? `<img src="${assetUrl(FIGHTER_BY_ID[slot.fighterId].portraitThumbPath)}" alt="${label}" />` : "<i></i>";
-    return `<div class="bracket-cell ${slot.isBye ? "bye" : ""}"><span>${slot.slot + 1}</span>${portrait}<strong>${label}</strong></div>`;
+    const label = slot.fighterId ? fighterDisplayLabel(slot.fighterId) : "부전승";
+    const portrait = slot.fighterId ? `<img src="${assetUrl(getEntryPortraitPath(slot.fighterId))}" alt="${label}" />` : "<i></i>";
+    return `<div class="bracket-cell ${slot.isBye ? "bye" : ""} ${slot.fighterId && isAwakenedFighter(slot.fighterId) ? "awakened" : ""}"><span>${slot.slot + 1}</span>${portrait}<strong>${label}${renderAwakenedTag(slot.fighterId)}</strong></div>`;
   }
 
   function renderAdvanceCell(label: string, fighterId: CharacterId | null, tone = "") {
-    const portrait = fighterId ? `<img src="${assetUrl(FIGHTER_BY_ID[fighterId].portraitThumbPath)}" alt="${fighterLabel(fighterId)}" />` : "<i></i>";
-    return `<div class="bracket-cell advance ${tone} ${fighterId ? "" : "placeholder"}"><span>${label}</span>${portrait}<strong>${fighterLabel(fighterId)}</strong></div>`;
+    const portrait = fighterId ? `<img src="${assetUrl(getEntryPortraitPath(fighterId))}" alt="${fighterDisplayLabel(fighterId)}" />` : "<i></i>";
+    return `<div class="bracket-cell advance ${tone} ${fighterId ? "" : "placeholder"} ${fighterId && isAwakenedFighter(fighterId) ? "awakened" : ""}"><span>${label}</span>${portrait}<strong>${fighterDisplayLabel(fighterId)}${renderAwakenedTag(fighterId)}</strong></div>`;
   }
 
   function renderBracketDiagram(slots: BracketSlot[], matches: BracketMatch[]) {
@@ -611,7 +696,7 @@ export function mountApp(root: HTMLElement, game: Phaser.Game): AppController {
     stopPhaserScenes();
     setMode("bracket");
     const completedMatches = getCompletedMatches();
-    const champion = replay?.champion && getWinner(completedMatches, "Final", 0) ? FIGHTER_BY_ID[replay.champion] : null;
+    const champion = replay?.champion && getWinner(completedMatches, "Final", 0) ? replay.champion : null;
 
     refs.stage.innerHTML = `
       <section class="bracket-screen">
@@ -621,7 +706,7 @@ export function mountApp(root: HTMLElement, game: Phaser.Game): AppController {
             <h2>${title}</h2>
             <span>${subtitle}</span>
           </div>
-          ${champion ? `<strong>우승 ${champion.title} ${champion.name}</strong>` : ""}
+          ${champion ? `<strong>우승 ${fighterDisplayLabel(champion)}</strong>` : ""}
         </div>
         ${renderBracketDiagram(tournament.slots, completedMatches)}
         <div class="bracket-actions">
@@ -648,6 +733,7 @@ export function mountApp(root: HTMLElement, game: Phaser.Game): AppController {
     currentSeed = makeSeed();
     tournament = createTournament(currentSeed, entryIds);
     replay = simulateTournamentFromState(currentSeed, tournament);
+    game.registry.set("awakenedFighterIds", [...awakenedFighterIds]);
     completedMatchIds = new Set(replay.matches.filter(isByeMatch).map((match) => match.id));
     battleIndex = 0;
     appendLog("토너먼트가 시작되었습니다.");
@@ -661,12 +747,13 @@ export function mountApp(root: HTMLElement, game: Phaser.Game): AppController {
 
     const battle = replay.battles[battleIndex];
     if (!battle) {
-      showBracket("토너먼트 종료", `${fighterLabel(replay.champion)}이 최종 우승했습니다.`, false);
+      showBracket("토너먼트 종료", `${fighterDisplayLabel(replay.champion)}이 최종 우승했습니다.`, false);
       return;
     }
 
     clearTimers();
     game.registry.set("battleReplay", battle);
+    game.registry.set("awakenedFighterIds", [...awakenedFighterIds]);
     setMode("battle");
     switchScene("BattleScene");
   }
@@ -674,7 +761,7 @@ export function mountApp(root: HTMLElement, game: Phaser.Game): AppController {
   function onTurnResolved(event: Event) {
     const detail = (event as CustomEvent<BattleLogEntry>).detail;
     appendLog(
-      `${detail.turn}턴 ${fighterLabel(detail.attacker)}: ${ATTACK_LABELS[detail.attackAction]} / ${fighterLabel(detail.defender)}: ${DEFENSE_LABELS[detail.defenseAction]} / 피해 ${detail.targetDamage}, 반사 ${detail.reflectedDamage}`,
+      `${detail.turn}턴 ${fighterDisplayLabel(detail.attacker)}: ${ATTACK_LABELS[detail.attackAction]} / ${fighterDisplayLabel(detail.defender)}: ${DEFENSE_LABELS[detail.defenseAction]} / 피해 ${detail.targetDamage}, 반사 ${detail.reflectedDamage}`,
     );
   }
 
@@ -688,13 +775,13 @@ export function mountApp(root: HTMLElement, game: Phaser.Game): AppController {
     if (completedMatch) {
       completedMatchIds.add(completedMatch.id);
     }
-    appendLog(`${ROUND_LABELS[detail.round]} 종료: ${fighterLabel(detail.winner)} 승리`);
+    appendLog(`${ROUND_LABELS[detail.round]} 종료: ${fighterDisplayLabel(detail.winner)} 승리`);
     battleIndex += 1;
 
     const isComplete = battleIndex >= replay.battles.length;
     showBracket(
       isComplete ? "최종 결과" : "대진표 결과 반영",
-      isComplete ? `${fighterLabel(replay.champion)}이 우승했습니다.` : "승자를 반영한 뒤 다음 경기로 이동합니다.",
+      isComplete ? `${fighterDisplayLabel(replay.champion)}이 우승했습니다.` : "승자를 반영한 뒤 다음 경기로 이동합니다.",
       !isComplete,
     );
   }
@@ -733,6 +820,31 @@ export function mountApp(root: HTMLElement, game: Phaser.Game): AppController {
       return;
     }
 
+    if (action === "toggle-awaken") {
+      const selected = FIGHTER_BY_ID[selectedFighterId];
+      if (!selected.selectFinalPortraitPath) {
+        return;
+      }
+
+      const token = selectRevealToken + 1;
+      selectRevealToken = token;
+      if (selectRevealTimer) {
+        window.clearTimeout(selectRevealTimer);
+        selectRevealTimer = null;
+      }
+
+      if (isAwakenedFighter(selectedFighterId)) {
+        awakenedFighterIds.delete(selectedFighterId);
+        showSelectProfileWithTransition(selected, token);
+      } else {
+        awakenedFighterIds.add(selectedFighterId);
+        showSelectFinalWithTransition(selected, token);
+      }
+      selectMediaFighterId = selectedFighterId;
+      updateSelectView();
+      return;
+    }
+
     if (action === "register-entry") {
       if (!entryIds.includes(selectedFighterId)) {
         entryIds = [...entryIds, selectedFighterId];
@@ -743,6 +855,7 @@ export function mountApp(root: HTMLElement, game: Phaser.Game): AppController {
 
     if (action === "remove-entry" && fighterId) {
       entryIds = entryIds.filter((entryId) => entryId !== fighterId);
+      awakenedFighterIds.delete(fighterId);
       updateSelectView();
       return;
     }

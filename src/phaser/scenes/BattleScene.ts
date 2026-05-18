@@ -56,6 +56,7 @@ export class BattleScene extends Phaser.Scene {
   private replay: BattleReplay | null = null;
   private views = new Map<CharacterId, FighterView>();
   private hp = new Map<CharacterId, number>();
+  private awakenedFighterIds = new Set<CharacterId>();
   private turnIndex = 0;
   private hud: HudView | null = null;
 
@@ -65,6 +66,7 @@ export class BattleScene extends Phaser.Scene {
 
   create() {
     this.replay = this.registry.get("battleReplay") as BattleReplay;
+    this.awakenedFighterIds = new Set((this.registry.get("awakenedFighterIds") as CharacterId[] | undefined) ?? []);
     this.views.clear();
     this.hp.clear();
     this.turnIndex = 0;
@@ -161,10 +163,27 @@ export class BattleScene extends Phaser.Scene {
 
   private drawPortrait(fighter: Fighter, x: number, y: number) {
     this.add.rectangle(x, y, 100, 100, 0x141414).setDepth(1);
-    const portrait = this.add.image(x, y, fighter.portraitKey).setDepth(2);
+    const portraitKey =
+      this.awakenedFighterIds.has(fighter.id) && fighter.selectFinalPortraitPath
+        ? `${fighter.portraitKey}-awakened`
+        : fighter.portraitKey;
+    const portrait = this.add.image(x, y, portraitKey).setDepth(2);
     this.fitImageInside(portrait, 92, 92);
     this.add.rectangle(x, y, 96, 96, fighter.palette.accent, 0.08).setDepth(3);
     this.add.rectangle(x, y, 100, 100, 0x000000, 0).setStrokeStyle(4, fighter.palette.accent).setDepth(4);
+    if (this.awakenedFighterIds.has(fighter.id)) {
+      this.add
+        .text(x, y + 62, "각성", {
+          fontFamily: "sans-serif",
+          fontSize: "12px",
+          fontStyle: "bold",
+          color: "#fef08a",
+          backgroundColor: "#4a3112",
+          padding: { x: 6, y: 2 },
+        })
+        .setOrigin(0.5)
+        .setDepth(5);
+    }
   }
 
   private fitImageInside(image: Phaser.GameObjects.Image, maxWidth: number, maxHeight: number) {
