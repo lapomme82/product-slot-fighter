@@ -32,6 +32,10 @@ interface UiRefs {
 
 const SCENE_KEYS = ["MenuScene", "TournamentScene", "BattleScene", "ResultScene"];
 const PRELOADED_IMAGES = new Set<string>();
+const SELECT_PROFILE_HOLD_MS = 2000;
+const SELECT_PROFILE_SWITCH_OUT_MS = 300;
+const SELECT_PROFILE_ENTER_MS = 460;
+const SELECT_LAYER_FADE_MS = 560;
 
 function makeSeed() {
   const random = new Uint32Array(1);
@@ -226,13 +230,13 @@ export function mountApp(root: HTMLElement, game: Phaser.Game): AppController {
           <strong data-select-count>${entryIds.length} / ${BASE_FIGHTERS.length}</strong>
         </div>
         <div class="select-layout">
-          <aside class="profile-panel select-profile">
+          <aside class="profile-panel select-profile" data-select-profile-panel>
             <div class="select-media" data-select-media>
               <img class="select-media-layer is-visible" data-select-profile-image src="${assetUrl(selected.portraitPath)}" alt="${selected.title} ${selected.name}" />
               <video class="select-media-layer" data-select-profile-video muted playsinline preload="auto"></video>
               <img class="select-media-layer" data-select-final-image src="${assetUrl(selected.selectFinalPortraitPath ?? selected.portraitPath)}" alt="${selected.title} ${selected.name} 최종 이미지" />
             </div>
-            <div>
+            <div class="select-profile-copy">
               <p data-select-profile-title>${selected.title}</p>
               <h3 data-select-profile-name>${selected.name}</h3>
               <span data-select-profile-concept>${selected.concept}</span>
@@ -276,6 +280,10 @@ export function mountApp(root: HTMLElement, game: Phaser.Game): AppController {
       video: refs.stage.querySelector<HTMLVideoElement>("[data-select-profile-video]"),
       finalImage: refs.stage.querySelector<HTMLImageElement>("[data-select-final-image]"),
     };
+  }
+
+  function getSelectProfilePanel() {
+    return refs.stage.querySelector<HTMLElement>("[data-select-profile-panel]");
   }
 
   function setSelectMediaLayer(layer: "profile" | "video" | "final" | null) {
@@ -330,6 +338,31 @@ export function mountApp(root: HTMLElement, game: Phaser.Game): AppController {
     }
   }
 
+  function showSelectProfileWithTransition(fighter: Fighter, token: number, onShown?: () => void) {
+    const panel = getSelectProfilePanel();
+    const { video } = getSelectMediaRefs();
+    video?.pause();
+    panel?.classList.remove("is-entering");
+    panel?.classList.add("is-switching");
+    setSelectMediaLayer(null);
+
+    selectRevealTimer = window.setTimeout(() => {
+      if (token !== selectRevealToken) {
+        return;
+      }
+
+      showSelectProfileImmediately(fighter);
+      panel?.classList.remove("is-switching");
+      panel?.classList.add("is-entering");
+      window.setTimeout(() => {
+        if (token === selectRevealToken) {
+          panel?.classList.remove("is-entering");
+        }
+      }, SELECT_PROFILE_ENTER_MS);
+      onShown?.();
+    }, SELECT_PROFILE_SWITCH_OUT_MS);
+  }
+
   function showStaticSelectMedia(fighter: Fighter) {
     selectRevealToken += 1;
     if (selectRevealTimer) {
@@ -350,41 +383,41 @@ export function mountApp(root: HTMLElement, game: Phaser.Game): AppController {
       if (token === selectRevealToken) {
         setSelectMediaLayer("final");
       }
-    }, 560);
+    }, SELECT_LAYER_FADE_MS);
   }
 
   function playSelectReveal(fighter: Fighter) {
-    if (!fighter.selectIntroVideoPath || !fighter.selectFinalPortraitPath) {
-      showStaticSelectMedia(fighter);
-      return;
-    }
-
     const token = selectRevealToken + 1;
     selectRevealToken = token;
     if (selectRevealTimer) {
       window.clearTimeout(selectRevealTimer);
       selectRevealTimer = null;
     }
-    showSelectProfileImmediately(fighter);
-    const { video } = getSelectMediaRefs();
 
-    selectRevealTimer = window.setTimeout(() => {
-      if (token !== selectRevealToken || !video) {
+    showSelectProfileWithTransition(fighter, token, () => {
+      if (!fighter.selectIntroVideoPath || !fighter.selectFinalPortraitPath) {
         return;
       }
 
-      setSelectMediaLayer(null);
+      const { video } = getSelectMediaRefs();
       selectRevealTimer = window.setTimeout(() => {
-        if (token !== selectRevealToken) {
+        if (token !== selectRevealToken || !video) {
           return;
         }
-        video.currentTime = 0;
-        video.onended = () => finishSelectReveal(token);
-        video.onerror = () => finishSelectReveal(token);
-        setSelectMediaLayer("video");
-        void video.play().catch(() => finishSelectReveal(token));
-      }, 560);
-    }, 2000);
+
+        setSelectMediaLayer(null);
+        selectRevealTimer = window.setTimeout(() => {
+          if (token !== selectRevealToken) {
+            return;
+          }
+          video.currentTime = 0;
+          video.onended = () => finishSelectReveal(token);
+          video.onerror = () => finishSelectReveal(token);
+          setSelectMediaLayer("video");
+          void video.play().catch(() => finishSelectReveal(token));
+        }, SELECT_LAYER_FADE_MS);
+      }, SELECT_PROFILE_HOLD_MS);
+    });
   }
 
   function renderEntryListHtml() {
