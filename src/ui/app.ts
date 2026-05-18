@@ -313,14 +313,30 @@ export function mountApp(root: HTMLElement, game: Phaser.Game): AppController {
     selectMediaFighterId = fighter.id;
   }
 
+  function showSelectProfileImmediately(fighter: Fighter) {
+    const { profileImage, video, finalImage } = getSelectMediaRefs();
+    const layers = [profileImage, video, finalImage].filter(Boolean) as HTMLElement[];
+    for (const layer of layers) {
+      layer.style.transition = "none";
+      layer.classList.remove("is-visible");
+    }
+
+    configureSelectMedia(fighter);
+    profileImage?.classList.add("is-visible");
+    void profileImage?.offsetHeight;
+
+    for (const layer of layers) {
+      layer.style.transition = "";
+    }
+  }
+
   function showStaticSelectMedia(fighter: Fighter) {
     selectRevealToken += 1;
     if (selectRevealTimer) {
       window.clearTimeout(selectRevealTimer);
       selectRevealTimer = null;
     }
-    configureSelectMedia(fighter);
-    setSelectMediaLayer("profile");
+    showSelectProfileImmediately(fighter);
   }
 
   function finishSelectReveal(token: number) {
@@ -349,8 +365,7 @@ export function mountApp(root: HTMLElement, game: Phaser.Game): AppController {
       window.clearTimeout(selectRevealTimer);
       selectRevealTimer = null;
     }
-    configureSelectMedia(fighter);
-    setSelectMediaLayer("profile");
+    showSelectProfileImmediately(fighter);
     const { video } = getSelectMediaRefs();
 
     selectRevealTimer = window.setTimeout(() => {
