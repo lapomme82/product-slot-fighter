@@ -35,6 +35,14 @@ export interface Fighter {
   portraitThumbPath: string;
   selectIntroVideoPath?: string;
   selectFinalPortraitPath?: string;
+  awakened?: {
+    name: string;
+    title: string;
+    concept: string;
+    portraitPath: string;
+    introVideoPath: string;
+    finalPortraitPath: string;
+  };
   palette: {
     primary: number;
     secondary: number;

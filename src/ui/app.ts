@@ -30,8 +30,18 @@ interface UiRefs {
   log: HTMLElement;
 }
 
+interface SelectMediaProfile {
+  title: string;
+  name: string;
+  concept: string;
+  profilePath: string;
+  finalPath: string;
+  introVideoPath?: string;
+}
+
 const SCENE_KEYS = ["MenuScene", "TournamentScene", "BattleScene", "ResultScene"];
 const PRELOADED_IMAGES = new Set<string>();
+const SPECIAL_SELECT_FIGHTER_IDS = new Set<CharacterId>(["truth-tracker", "glass-heart"]);
 const SELECT_PROFILE_HOLD_MS = 2000;
 const SELECT_PROFILE_SWITCH_OUT_MS = 300;
 const SELECT_PROFILE_ENTER_MS = 460;
@@ -217,11 +227,33 @@ export function mountApp(root: HTMLElement, game: Phaser.Game): AppController {
       if (fighter.selectFinalPortraitPath) {
         preloadImage(assetUrl(fighter.selectFinalPortraitPath));
       }
+      if (fighter.awakened) {
+        preloadImage(assetUrl(fighter.awakened.portraitPath));
+        preloadImage(assetUrl(fighter.awakened.finalPortraitPath));
+      }
     }
     const selected = FIGHTER_BY_ID[selectedFighterId];
+    const selectedProfile = getActiveSelectProfile(selected);
     const isRegistered = entryIds.includes(selectedFighterId);
     const isAwakened = awakenedFighterIds.has(selectedFighterId);
     const canStart = entryIds.length >= 2;
+    const primaryFighters = BASE_FIGHTERS.filter((fighter) => !SPECIAL_SELECT_FIGHTER_IDS.has(fighter.id));
+    const specialFighters = BASE_FIGHTERS.filter((fighter) => SPECIAL_SELECT_FIGHTER_IDS.has(fighter.id));
+    const renderSelectCard = (fighter: Fighter) => {
+      const active = fighter.id === selectedFighterId;
+      const registered = entryIds.includes(fighter.id);
+      const awakened = isAwakenedFighter(fighter.id);
+      return `
+        <button class="select-card ${active ? "active" : ""} ${registered ? "registered" : ""} ${awakened ? "awakened" : ""}" data-action="select-fighter" data-fighter-id="${fighter.id}">
+          <img src="${assetUrl(getEntryPortraitPath(fighter.id))}" alt="${fighterDisplayLabel(fighter.id)}" />
+          <span>
+            <strong>${fighterDisplayLabel(fighter.id)}</strong>
+            <small>${getFighterConcept(fighter.id)}</small>
+          </span>
+          ${registered ? "<i>ENTRY</i>" : ""}
+        </button>
+      `;
+    };
 
     refs.stage.innerHTML = `
       <section class="character-select-screen">
@@ -235,38 +267,30 @@ export function mountApp(root: HTMLElement, game: Phaser.Game): AppController {
         <div class="select-layout">
           <aside class="profile-panel select-profile" data-select-profile-panel>
             <div class="select-media" data-select-media>
-              <img class="select-media-layer is-visible" data-select-profile-image src="${assetUrl(selected.portraitPath)}" alt="${selected.title} ${selected.name}" />
+              <img class="select-media-layer is-visible" data-select-profile-image src="${assetUrl(selectedProfile.profilePath)}" alt="${selectedProfile.title} ${selectedProfile.name}" />
               <video class="select-media-layer" data-select-profile-video muted playsinline preload="auto"></video>
-              <img class="select-media-layer" data-select-final-image src="${assetUrl(selected.selectFinalPortraitPath ?? selected.portraitPath)}" alt="${selected.title} ${selected.name} 최종 이미지" />
+              <img class="select-media-layer" data-select-final-image src="${assetUrl(selectedProfile.finalPath)}" alt="${selectedProfile.title} ${selectedProfile.name} 최종 이미지" />
             </div>
             <div class="select-profile-copy">
-              <p data-select-profile-title>${selected.title}</p>
-              <h3 data-select-profile-name>${selected.name}</h3>
-              <span data-select-profile-concept>${selected.concept}</span>
+              <p data-select-profile-title>${selectedProfile.title}</p>
+              <h3 data-select-profile-name>${selectedProfile.name}</h3>
+              <span data-select-profile-concept>${selectedProfile.concept}</span>
             </div>
             <div class="select-profile-actions">
-              <button class="awaken-select-button ${isAwakened ? "active" : ""}" data-action="toggle-awaken" data-select-awaken ${selected.selectFinalPortraitPath ? "" : "disabled"}>
+              <button class="awaken-select-button ${isAwakened ? "active" : ""}" data-action="toggle-awaken" data-select-awaken ${selected.awakened ? "" : "disabled"}>
                 ${isAwakened ? "각성 선택됨" : "각성 캐릭터 선택"}
               </button>
               <button data-action="register-entry" data-select-register ${isRegistered ? "disabled" : ""}>${isRegistered ? "등록 완료" : isAwakened ? "각성 엔트리 등록" : "엔트리 등록"}</button>
             </div>
           </aside>
           <section class="fighter-pool">
-            ${BASE_FIGHTERS.map((fighter) => {
-              const active = fighter.id === selectedFighterId;
-              const registered = entryIds.includes(fighter.id);
-              const awakened = isAwakenedFighter(fighter.id);
-              return `
-                <button class="select-card ${active ? "active" : ""} ${registered ? "registered" : ""} ${awakened ? "awakened" : ""}" data-action="select-fighter" data-fighter-id="${fighter.id}">
-                  <img src="${assetUrl(fighter.portraitThumbPath)}" alt="${fighter.title} ${fighter.name}" />
-                  <span>
-                    <strong>${fighter.title} ${fighter.name}</strong>
-                    <small>${fighter.concept}</small>
-                  </span>
-                  ${registered ? "<i>ENTRY</i>" : ""}
-                </button>
-              `;
-            }).join("")}
+            <div class="fighter-pool-group">
+              ${primaryFighters.map(renderSelectCard).join("")}
+            </div>
+            <div class="fighter-pool-group special-fighter-pool">
+              <p class="fighter-pool-label">특별 참전</p>
+              ${specialFighters.map(renderSelectCard).join("")}
+            </div>
           </section>
           <aside class="entry-panel">
               <div class="section-heading">
@@ -287,10 +311,44 @@ export function mountApp(root: HTMLElement, game: Phaser.Game): AppController {
     return awakenedFighterIds.has(fighterId);
   }
 
+  function getBaseSelectProfile(fighter: Fighter): SelectMediaProfile {
+    return {
+      title: fighter.title,
+      name: fighter.name,
+      concept: fighter.concept,
+      profilePath: fighter.portraitPath,
+      introVideoPath: fighter.selectIntroVideoPath,
+      finalPath: fighter.selectFinalPortraitPath ?? fighter.portraitPath,
+    };
+  }
+
+  function getAwakenedSelectProfile(fighter: Fighter): SelectMediaProfile | null {
+    if (!fighter.awakened) {
+      return null;
+    }
+    return {
+      title: fighter.awakened.title,
+      name: fighter.awakened.name,
+      concept: fighter.awakened.concept,
+      profilePath: fighter.awakened.portraitPath,
+      introVideoPath: fighter.awakened.introVideoPath,
+      finalPath: fighter.awakened.finalPortraitPath,
+    };
+  }
+
+  function getActiveSelectProfile(fighter: Fighter): SelectMediaProfile {
+    return isAwakenedFighter(fighter.id) ? getAwakenedSelectProfile(fighter) ?? getBaseSelectProfile(fighter) : getBaseSelectProfile(fighter);
+  }
+
+  function getFighterConcept(fighterId: CharacterId) {
+    const fighter = FIGHTER_BY_ID[fighterId];
+    return getActiveSelectProfile(fighter).concept;
+  }
+
   function getEntryPortraitPath(fighterId: CharacterId, fallbackToThumb = true) {
     const fighter = FIGHTER_BY_ID[fighterId];
-    if (isAwakenedFighter(fighterId) && fighter.selectFinalPortraitPath) {
-      return fighter.selectFinalPortraitPath;
+    if (isAwakenedFighter(fighterId) && fighter.awakened) {
+      return fighter.awakened.finalPortraitPath;
     }
     return fallbackToThumb ? fighter.portraitThumbPath : fighter.portraitPath;
   }
@@ -299,7 +357,9 @@ export function mountApp(root: HTMLElement, game: Phaser.Game): AppController {
     if (!fighterId) {
       return fighterLabel(fighterId);
     }
-    return `${isAwakenedFighter(fighterId) ? "각성 " : ""}${fighterLabel(fighterId)}`;
+    const fighter = FIGHTER_BY_ID[fighterId];
+    const profile = getActiveSelectProfile(fighter);
+    return `${profile.title} ${profile.name}`;
   }
 
   function renderAwakenedTag(fighterId: CharacterId | null) {
@@ -325,22 +385,22 @@ export function mountApp(root: HTMLElement, game: Phaser.Game): AppController {
     finalImage?.classList.toggle("is-visible", layer === "final");
   }
 
-  function configureSelectMedia(fighter: Fighter) {
+  function configureSelectMedia(fighter: Fighter, profile: SelectMediaProfile = getActiveSelectProfile(fighter)) {
     const { profileImage, video, finalImage } = getSelectMediaRefs();
     if (profileImage) {
-      profileImage.src = assetUrl(fighter.portraitPath);
-      profileImage.alt = `${fighter.title} ${fighter.name}`;
+      profileImage.src = assetUrl(profile.profilePath);
+      profileImage.alt = `${profile.title} ${profile.name}`;
     }
     if (finalImage) {
-      finalImage.src = assetUrl(fighter.selectFinalPortraitPath ?? fighter.portraitPath);
-      finalImage.alt = `${fighter.title} ${fighter.name} 최종 이미지`;
+      finalImage.src = assetUrl(profile.finalPath);
+      finalImage.alt = `${profile.title} ${profile.name} 최종 이미지`;
     }
     if (video) {
       video.pause();
       video.onended = null;
       video.onerror = null;
-      if (fighter.selectIntroVideoPath) {
-        const introVideoPath = assetUrl(fighter.selectIntroVideoPath);
+      if (profile.introVideoPath) {
+        const introVideoPath = assetUrl(profile.introVideoPath);
         if (video.getAttribute("src") !== introVideoPath) {
           video.src = introVideoPath;
           video.load();
@@ -353,7 +413,7 @@ export function mountApp(root: HTMLElement, game: Phaser.Game): AppController {
     selectMediaFighterId = fighter.id;
   }
 
-  function showSelectProfileImmediately(fighter: Fighter) {
+  function showSelectProfileImmediately(fighter: Fighter, profile = getActiveSelectProfile(fighter)) {
     const { profileImage, video, finalImage } = getSelectMediaRefs();
     const layers = [profileImage, video, finalImage].filter(Boolean) as HTMLElement[];
     for (const layer of layers) {
@@ -361,7 +421,7 @@ export function mountApp(root: HTMLElement, game: Phaser.Game): AppController {
       layer.classList.remove("is-visible");
     }
 
-    configureSelectMedia(fighter);
+    configureSelectMedia(fighter, profile);
     profileImage?.classList.add("is-visible");
     void profileImage?.offsetHeight;
 
@@ -370,7 +430,7 @@ export function mountApp(root: HTMLElement, game: Phaser.Game): AppController {
     }
   }
 
-  function showSelectFinalImmediately(fighter: Fighter) {
+  function showSelectFinalImmediately(fighter: Fighter, profile = getActiveSelectProfile(fighter)) {
     const { profileImage, video, finalImage } = getSelectMediaRefs();
     const layers = [profileImage, video, finalImage].filter(Boolean) as HTMLElement[];
     for (const layer of layers) {
@@ -378,7 +438,7 @@ export function mountApp(root: HTMLElement, game: Phaser.Game): AppController {
       layer.classList.remove("is-visible");
     }
 
-    configureSelectMedia(fighter);
+    configureSelectMedia(fighter, profile);
     finalImage?.classList.add("is-visible");
     void finalImage?.offsetHeight;
 
@@ -387,7 +447,12 @@ export function mountApp(root: HTMLElement, game: Phaser.Game): AppController {
     }
   }
 
-  function showSelectFinalWithTransition(fighter: Fighter, token: number) {
+  function showSelectProfileWithTransition(
+    fighter: Fighter,
+    token: number,
+    profile = getActiveSelectProfile(fighter),
+    onShown?: () => void,
+  ) {
     const panel = getSelectProfilePanel();
     const { video } = getSelectMediaRefs();
     video?.pause();
@@ -400,31 +465,7 @@ export function mountApp(root: HTMLElement, game: Phaser.Game): AppController {
         return;
       }
 
-      showSelectFinalImmediately(fighter);
-      panel?.classList.remove("is-switching");
-      panel?.classList.add("is-entering");
-      window.setTimeout(() => {
-        if (token === selectRevealToken) {
-          panel?.classList.remove("is-entering");
-        }
-      }, SELECT_PROFILE_ENTER_MS);
-    }, SELECT_PROFILE_SWITCH_OUT_MS);
-  }
-
-  function showSelectProfileWithTransition(fighter: Fighter, token: number, onShown?: () => void) {
-    const panel = getSelectProfilePanel();
-    const { video } = getSelectMediaRefs();
-    video?.pause();
-    panel?.classList.remove("is-entering");
-    panel?.classList.add("is-switching");
-    setSelectMediaLayer(null);
-
-    selectRevealTimer = window.setTimeout(() => {
-      if (token !== selectRevealToken) {
-        return;
-      }
-
-      showSelectProfileImmediately(fighter);
+      showSelectProfileImmediately(fighter, profile);
       panel?.classList.remove("is-switching");
       panel?.classList.add("is-entering");
       window.setTimeout(() => {
@@ -463,7 +504,7 @@ export function mountApp(root: HTMLElement, game: Phaser.Game): AppController {
     }, SELECT_LAYER_FADE_MS);
   }
 
-  function playSelectReveal(fighter: Fighter) {
+  function playSelectMediaReveal(fighter: Fighter, profile: SelectMediaProfile) {
     const token = selectRevealToken + 1;
     selectRevealToken = token;
     if (selectRevealTimer) {
@@ -471,8 +512,8 @@ export function mountApp(root: HTMLElement, game: Phaser.Game): AppController {
       selectRevealTimer = null;
     }
 
-    showSelectProfileWithTransition(fighter, token, () => {
-      if (!fighter.selectIntroVideoPath || !fighter.selectFinalPortraitPath) {
+    showSelectProfileWithTransition(fighter, token, profile, () => {
+      if (!profile.introVideoPath) {
         return;
       }
 
@@ -495,6 +536,18 @@ export function mountApp(root: HTMLElement, game: Phaser.Game): AppController {
         }, SELECT_LAYER_FADE_MS);
       }, SELECT_PROFILE_HOLD_MS);
     });
+  }
+
+  function playSelectReveal(fighter: Fighter) {
+    playSelectMediaReveal(fighter, getBaseSelectProfile(fighter));
+  }
+
+  function playAwakenedSelectReveal(fighter: Fighter) {
+    const awakenedProfile = getAwakenedSelectProfile(fighter);
+    if (!awakenedProfile) {
+      return;
+    }
+    playSelectMediaReveal(fighter, awakenedProfile);
   }
 
   function renderEntryListHtml() {
@@ -525,9 +578,14 @@ export function mountApp(root: HTMLElement, game: Phaser.Game): AppController {
     const selected = FIGHTER_BY_ID[selectedFighterId];
     const isRegistered = entryIds.includes(selectedFighterId);
     const isAwakened = isAwakenedFighter(selectedFighterId);
+    const selectedProfile = getActiveSelectProfile(selected);
     const canStart = entryIds.length >= 2;
     if (playReveal) {
-      playSelectReveal(selected);
+      if (isAwakened) {
+        playAwakenedSelectReveal(selected);
+      } else {
+        playSelectReveal(selected);
+      }
     } else if (selectMediaFighterId !== selected.id) {
       showStaticSelectMedia(selected);
     }
@@ -541,19 +599,19 @@ export function mountApp(root: HTMLElement, game: Phaser.Game): AppController {
     const entryList = refs.stage.querySelector<HTMLElement>("[data-select-entry-list]");
 
     if (title) {
-      title.textContent = selected.title;
+      title.textContent = selectedProfile.title;
     }
     if (name) {
-      name.textContent = selected.name;
+      name.textContent = selectedProfile.name;
     }
     if (concept) {
-      concept.textContent = selected.concept;
+      concept.textContent = selectedProfile.concept;
     }
     if (count) {
       count.textContent = `${entryIds.length} / ${BASE_FIGHTERS.length}`;
     }
     if (awakenButton) {
-      awakenButton.disabled = !selected.selectFinalPortraitPath;
+      awakenButton.disabled = !selected.awakened;
       awakenButton.classList.toggle("active", isAwakened);
       awakenButton.textContent = isAwakened ? "각성 선택됨" : "각성 캐릭터 선택";
     }
@@ -571,9 +629,22 @@ export function mountApp(root: HTMLElement, game: Phaser.Game): AppController {
     refs.stage.querySelectorAll<HTMLElement>(".select-card[data-fighter-id]").forEach((card) => {
       const fighterId = card.dataset.fighterId as CharacterId;
       const registered = entryIds.includes(fighterId);
+      const cardImage = card.querySelector<HTMLImageElement>("img");
+      const cardTitle = card.querySelector<HTMLElement>("strong");
+      const cardConcept = card.querySelector<HTMLElement>("small");
       card.classList.toggle("active", fighterId === selectedFighterId);
       card.classList.toggle("registered", registered);
       card.classList.toggle("awakened", isAwakenedFighter(fighterId));
+      if (cardImage) {
+        cardImage.src = assetUrl(getEntryPortraitPath(fighterId));
+        cardImage.alt = fighterDisplayLabel(fighterId);
+      }
+      if (cardTitle) {
+        cardTitle.textContent = fighterDisplayLabel(fighterId);
+      }
+      if (cardConcept) {
+        cardConcept.textContent = getFighterConcept(fighterId);
+      }
       const badge = card.querySelector("i");
       if (registered && !badge) {
         const entryBadge = document.createElement("i");
@@ -822,23 +893,22 @@ export function mountApp(root: HTMLElement, game: Phaser.Game): AppController {
 
     if (action === "toggle-awaken") {
       const selected = FIGHTER_BY_ID[selectedFighterId];
-      if (!selected.selectFinalPortraitPath) {
+      if (!selected.awakened) {
         return;
       }
 
-      const token = selectRevealToken + 1;
-      selectRevealToken = token;
-      if (selectRevealTimer) {
-        window.clearTimeout(selectRevealTimer);
-        selectRevealTimer = null;
-      }
-
       if (isAwakenedFighter(selectedFighterId)) {
+        const token = selectRevealToken + 1;
+        selectRevealToken = token;
+        if (selectRevealTimer) {
+          window.clearTimeout(selectRevealTimer);
+          selectRevealTimer = null;
+        }
         awakenedFighterIds.delete(selectedFighterId);
-        showSelectProfileWithTransition(selected, token);
+        showSelectProfileWithTransition(selected, token, getBaseSelectProfile(selected));
       } else {
         awakenedFighterIds.add(selectedFighterId);
-        showSelectFinalWithTransition(selected, token);
+        playAwakenedSelectReveal(selected);
       }
       selectMediaFighterId = selectedFighterId;
       updateSelectView();

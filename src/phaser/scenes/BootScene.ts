@@ -28,8 +28,8 @@ export class BootScene extends Phaser.Scene {
   preload() {
     for (const fighter of FIGHTERS) {
       this.load.image(fighter.portraitKey, assetUrl(fighter.portraitPath));
-      if (fighter.selectFinalPortraitPath) {
-        this.load.image(`${fighter.portraitKey}-awakened`, assetUrl(fighter.selectFinalPortraitPath));
+      if (fighter.awakened) {
+        this.load.image(`${fighter.portraitKey}-awakened`, assetUrl(fighter.awakened.finalPortraitPath));
       }
       for (const motion of CHARACTER_MOTIONS) {
         for (let frameIndex = 0; frameIndex < CHARACTER_FRAME_COUNT; frameIndex += 1) {

@@ -108,14 +108,14 @@ export class BattleScene extends Phaser.Scene {
     this.drawPortrait(right, width - 86, 76);
 
     this.add
-      .text(142, panelY, `${left.title}  ${left.name}`, {
+      .text(142, panelY, this.fighterLabel(left), {
         fontFamily: "sans-serif",
         fontSize: "18px",
         color: "#fff7d6",
       })
       .setOrigin(0, 0.5);
     this.add
-      .text(width - 142, panelY, `${right.title}  ${right.name}`, {
+      .text(width - 142, panelY, this.fighterLabel(right), {
         fontFamily: "sans-serif",
         fontSize: "18px",
         color: "#fff7d6",
@@ -164,7 +164,7 @@ export class BattleScene extends Phaser.Scene {
   private drawPortrait(fighter: Fighter, x: number, y: number) {
     this.add.rectangle(x, y, 100, 100, 0x141414).setDepth(1);
     const portraitKey =
-      this.awakenedFighterIds.has(fighter.id) && fighter.selectFinalPortraitPath
+      this.awakenedFighterIds.has(fighter.id) && fighter.awakened
         ? `${fighter.portraitKey}-awakened`
         : fighter.portraitKey;
     const portrait = this.add.image(x, y, portraitKey).setDepth(2);
@@ -184,6 +184,11 @@ export class BattleScene extends Phaser.Scene {
         .setOrigin(0.5)
         .setDepth(5);
     }
+  }
+
+  private fighterLabel(fighter: Fighter) {
+    const awakened = this.awakenedFighterIds.has(fighter.id) ? fighter.awakened : undefined;
+    return `${awakened?.title ?? fighter.title}  ${awakened?.name ?? fighter.name}`;
   }
 
   private fitImageInside(image: Phaser.GameObjects.Image, maxWidth: number, maxHeight: number) {
