@@ -72,6 +72,11 @@
 - `public/assets/ui/title-tournament-button.png`의 버튼 바깥 검은 캔버스를 투명 알파로 정리했습니다.
 - 버튼 에셋의 투명 여백을 줄이고 타이틀 화면에서 표시되는 크기를 낮췄습니다.
 
+## 2026-05-19 타이틀 버튼 이미지 교체
+
+- 사용자가 제공한 커피 콘셉트 버튼 이미지를 `public/assets/ui/title-tournament-button.png`로 교체했습니다.
+- 첨부 이미지의 체크무늬 배경을 투명 알파로 변환하고 타이틀 화면 버튼으로 사용하도록 여백을 잘랐습니다.
+
 ## 최근 Git 히스토리
 
 - `de9c8b3` Add awakened character reveal roster
