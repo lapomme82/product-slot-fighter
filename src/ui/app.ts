@@ -400,6 +400,21 @@ export function mountApp(root: HTMLElement, game: Phaser.Game): AppController {
     finalImage?.classList.toggle("is-visible", layer === "final");
   }
 
+  function setSelectMediaLayerImmediately(layer: "profile" | "video" | "final" | null) {
+    const { profileImage, video, finalImage } = getSelectMediaRefs();
+    const layers = [profileImage, video, finalImage].filter(Boolean) as HTMLElement[];
+    for (const mediaLayer of layers) {
+      mediaLayer.style.transition = "none";
+    }
+
+    setSelectMediaLayer(layer);
+    void layers[0]?.offsetHeight;
+
+    for (const mediaLayer of layers) {
+      mediaLayer.style.transition = "";
+    }
+  }
+
   function configureSelectMedia(fighter: Fighter, profile: SelectMediaProfile = getActiveSelectProfile(fighter)) {
     const { profileImage, video, finalImage } = getSelectMediaRefs();
     if (profileImage) {
@@ -500,7 +515,12 @@ export function mountApp(root: HTMLElement, game: Phaser.Game): AppController {
     showSelectProfileImmediately(fighter, profile);
   }
 
-  function playSelectCardFlipTransition(fighter: Fighter, profile: SelectMediaProfile, layer: "profile" | "final") {
+  function playSelectCardFlipTransition(
+    fighter: Fighter,
+    profile: SelectMediaProfile,
+    layer: "profile" | "final",
+    onComplete?: (token: number) => void,
+  ) {
     const token = selectRevealToken + 1;
     selectRevealToken = token;
     if (selectRevealTimer) {
@@ -530,6 +550,7 @@ export function mountApp(root: HTMLElement, game: Phaser.Game): AppController {
           panel?.classList.remove("is-flipping");
           selectCard?.classList.remove("is-flipping");
           selectRevealTimer = null;
+          onComplete?.(token);
         }
       }, SELECT_CARD_FLIP_MS - SELECT_CARD_FLIP_SWAP_MS);
     }, SELECT_CARD_FLIP_SWAP_MS);
@@ -541,11 +562,34 @@ export function mountApp(root: HTMLElement, game: Phaser.Game): AppController {
       window.clearTimeout(selectRevealTimer);
       selectRevealTimer = null;
     }
-    if (isAwakenedFighter(fighter.id)) {
-      showSelectFinalImmediately(fighter);
+    showSelectProfileImmediately(fighter);
+  }
+
+  function queueSelectIntroVideo(token: number, profile: SelectMediaProfile) {
+    if (!profile.introVideoPath) {
       return;
     }
-    showSelectProfileImmediately(fighter);
+
+    selectRevealTimer = window.setTimeout(() => {
+      if (token !== selectRevealToken) {
+        return;
+      }
+
+      const { video } = getSelectMediaRefs();
+      if (!video) {
+        return;
+      }
+
+      try {
+        video.currentTime = 0;
+      } catch {
+        // Some browsers reject currentTime before metadata is ready; playback still starts from the beginning after load.
+      }
+      video.onended = () => finishSelectReveal(token);
+      video.onerror = () => finishSelectReveal(token);
+      setSelectMediaLayerImmediately("video");
+      void video.play().catch(() => finishSelectReveal(token));
+    }, SELECT_PROFILE_HOLD_MS);
   }
 
   function finishSelectReveal(token: number) {
@@ -557,7 +601,7 @@ export function mountApp(root: HTMLElement, game: Phaser.Game): AppController {
     setSelectMediaLayer(null);
     selectRevealTimer = window.setTimeout(() => {
       if (token === selectRevealToken) {
-        setSelectMediaLayer("final");
+        setSelectMediaLayerImmediately("final");
       }
     }, SELECT_LAYER_FADE_MS);
   }
@@ -571,28 +615,7 @@ export function mountApp(root: HTMLElement, game: Phaser.Game): AppController {
     }
 
     showSelectProfileWithTransition(fighter, token, profile, () => {
-      if (!profile.introVideoPath) {
-        return;
-      }
-
-      const { video } = getSelectMediaRefs();
-      selectRevealTimer = window.setTimeout(() => {
-        if (token !== selectRevealToken || !video) {
-          return;
-        }
-
-        setSelectMediaLayer(null);
-        selectRevealTimer = window.setTimeout(() => {
-          if (token !== selectRevealToken) {
-            return;
-          }
-          video.currentTime = 0;
-          video.onended = () => finishSelectReveal(token);
-          video.onerror = () => finishSelectReveal(token);
-          setSelectMediaLayer("video");
-          void video.play().catch(() => finishSelectReveal(token));
-        }, SELECT_LAYER_FADE_MS);
-      }, SELECT_PROFILE_HOLD_MS);
+      queueSelectIntroVideo(token, profile);
     });
   }
 
@@ -974,15 +997,16 @@ export function mountApp(root: HTMLElement, game: Phaser.Game): AppController {
       }
 
       if (isAwakenedFighter(selectedFighterId)) {
+        const baseProfile = getBaseSelectProfile(selected);
         awakenedFighterIds.delete(selectedFighterId);
-        playSelectCardFlipTransition(selected, getBaseSelectProfile(selected), "profile");
+        playSelectCardFlipTransition(selected, baseProfile, "profile", (token) => queueSelectIntroVideo(token, baseProfile));
       } else {
         const awakenedProfile = getAwakenedSelectProfile(selected);
         if (!awakenedProfile) {
           return;
         }
         awakenedFighterIds.add(selectedFighterId);
-        playSelectCardFlipTransition(selected, awakenedProfile, "final");
+        playSelectCardFlipTransition(selected, awakenedProfile, "profile", (token) => queueSelectIntroVideo(token, awakenedProfile));
       }
       selectMediaFighterId = selectedFighterId;
       updateSelectView();
