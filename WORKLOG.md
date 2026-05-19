@@ -35,6 +35,13 @@
 - 오버레이는 `.title-screen::after`로 분리해 이미지 레이어가 명확히 렌더링되도록 수정했습니다.
 - 검증: `npm test` 통과, `npm run build` 통과.
 
+## 2026-05-19 타이틀 로고 적용
+
+- 첨부 로고 이미지를 타이틀 화면용 `public/assets/ui/title-logo.png`로 추가했습니다.
+- 타이틀 화면의 텍스트 제목을 시각적으로는 로고 이미지로 대체하고, 접근성용 제목은 `sr-only`로 유지했습니다.
+- 배경 위에서 로고가 선명하게 보이도록 크기, 위치, 드롭 섀도, 모바일 크기 제한을 적용했습니다.
+- 검증: `npm test` 통과, `npm run build` 통과, 개발 서버에서 로고 이미지 `200 OK` 확인.
+
 ## 최근 Git 히스토리
 
 - `de9c8b3` Add awakened character reveal roster

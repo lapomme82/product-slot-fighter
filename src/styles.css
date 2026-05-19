@@ -136,6 +136,16 @@ h2 {
   display: none !important;
 }
 
+.sr-only {
+  position: absolute;
+  overflow: hidden;
+  width: 1px;
+  height: 1px;
+  clip: rect(0, 0, 0, 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
 .view-stage {
   min-height: 680px;
   border: 1px solid #9f7a2d;
@@ -186,8 +196,9 @@ h2 {
   z-index: 2;
   display: grid;
   justify-items: center;
-  gap: 16px;
-  max-width: 620px;
+  gap: 14px;
+  max-width: min(92vw, 900px);
+  transform: translateY(-10px);
 }
 
 .title-copy h2 {
@@ -202,6 +213,17 @@ h2 {
   color: #f7ead5;
   font-size: 16px;
   text-shadow: 0 2px 10px rgba(0, 0, 0, 0.88);
+}
+
+.title-logo {
+  display: block;
+  width: clamp(320px, 62vw, 760px);
+  max-width: 100%;
+  max-height: min(42vh, 330px);
+  object-fit: contain;
+  filter:
+    drop-shadow(0 12px 22px rgba(0, 0, 0, 0.92))
+    drop-shadow(0 0 28px rgba(250, 204, 21, 0.24));
 }
 
 .big-action,
@@ -1011,6 +1033,15 @@ h2 {
 
   .title-copy h2 {
     font-size: 38px;
+  }
+
+  .title-copy {
+    transform: translateY(-4px);
+  }
+
+  .title-logo {
+    width: clamp(280px, 86vw, 620px);
+    max-height: 240px;
   }
 
   .select-heading,
