@@ -93,6 +93,46 @@ export const SPRITE_ATLAS_DEFINITIONS: SpriteAtlasDefinition[] = [
     imagePath: "/assets/sprite-atlases/seal-judge-awakened.png",
     metadataPath: "/assets/sprite-atlases/seal-judge-awakened.json",
   },
+  {
+    fighterId: "seahorse-overlord",
+    variant: "awakened",
+    textureKey: "atlas-seahorse-overlord-awakened",
+    metadataKey: "atlas-meta-seahorse-overlord-awakened",
+    imagePath: "/assets/sprite-atlases/seahorse-overlord-awakened.png",
+    metadataPath: "/assets/sprite-atlases/seahorse-overlord-awakened.json",
+  },
+  {
+    fighterId: "longing-soul",
+    variant: "base",
+    textureKey: "atlas-longing-soul",
+    metadataKey: "atlas-meta-longing-soul",
+    imagePath: "/assets/sprite-atlases/longing-soul.png",
+    metadataPath: "/assets/sprite-atlases/longing-soul.json",
+  },
+  {
+    fighterId: "longing-soul",
+    variant: "awakened",
+    textureKey: "atlas-longing-soul-awakened",
+    metadataKey: "atlas-meta-longing-soul-awakened",
+    imagePath: "/assets/sprite-atlases/longing-soul-awakened.png",
+    metadataPath: "/assets/sprite-atlases/longing-soul-awakened.json",
+  },
+  {
+    fighterId: "emuji",
+    variant: "awakened",
+    textureKey: "atlas-emuji-awakened",
+    metadataKey: "atlas-meta-emuji-awakened",
+    imagePath: "/assets/sprite-atlases/emuji-awakened.png",
+    metadataPath: "/assets/sprite-atlases/emuji-awakened.json",
+  },
+  {
+    fighterId: "truth-tracker",
+    variant: "awakened",
+    textureKey: "atlas-truth-tracker-awakened",
+    metadataKey: "atlas-meta-truth-tracker-awakened",
+    imagePath: "/assets/sprite-atlases/truth-tracker-awakened.png",
+    metadataPath: "/assets/sprite-atlases/truth-tracker-awakened.json",
+  },
 ];
 
 const ATLAS_ANIMATION_BY_MOTION: Record<CharacterMotion, string> = {
