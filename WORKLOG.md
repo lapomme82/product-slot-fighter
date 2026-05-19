@@ -67,6 +67,11 @@
 - 정확한 한글 표기를 위해 `토너먼트` 텍스트를 이미지로 합성한 `public/assets/ui/title-tournament-button.png` 버튼 에셋을 추가했습니다.
 - 타이틀 화면의 CTA를 시스템 폰트 텍스트 버튼이 아닌 이미지 버튼으로 교체했습니다.
 
+## 2026-05-19 타이틀 버튼 투명화 및 축소
+
+- `public/assets/ui/title-tournament-button.png`의 버튼 바깥 검은 캔버스를 투명 알파로 정리했습니다.
+- 버튼 에셋의 투명 여백을 줄이고 타이틀 화면에서 표시되는 크기를 낮췄습니다.
+
 ## 최근 Git 히스토리
 
 - `de9c8b3` Add awakened character reveal roster

@@ -228,8 +228,8 @@ h2 {
 
 .title-image-button {
   display: block;
-  width: clamp(280px, 34vw, 430px);
-  max-width: 86vw;
+  width: clamp(220px, 27vw, 330px);
+  max-width: 76vw;
   border: 0;
   background: transparent;
   padding: 0;
@@ -1073,7 +1073,7 @@ h2 {
   }
 
   .title-image-button {
-    width: min(360px, 84vw);
+    width: min(300px, 76vw);
   }
 
   .select-heading,
