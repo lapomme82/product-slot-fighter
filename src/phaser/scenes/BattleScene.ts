@@ -55,6 +55,10 @@ interface HudView {
   rightHpText: Phaser.GameObjects.Text;
 }
 
+interface MotionPlaybackOptions {
+  returnToIdle?: boolean;
+}
+
 export class BattleScene extends Phaser.Scene {
   private replay: BattleReplay | null = null;
   private views = new Map<CharacterId, FighterView>();
@@ -62,6 +66,8 @@ export class BattleScene extends Phaser.Scene {
   private awakenedFighterIds = new Set<CharacterId>();
   private turnIndex = 0;
   private hud: HudView | null = null;
+  private battleFlowToken = 0;
+  private finishStarted = false;
 
   constructor() {
     super("BattleScene");
@@ -74,11 +80,16 @@ export class BattleScene extends Phaser.Scene {
     this.hp.clear();
     this.turnIndex = 0;
     this.hud = null;
+    this.battleFlowToken += 1;
+    this.finishStarted = false;
     this.cameras.main.setBackgroundColor(0x07080c);
     this.createArena();
     this.createTopHud();
     this.createFighters();
-    this.time.delayedCall(650, () => this.playNextTurn());
+    const flowToken = this.battleFlowToken;
+    this.time.delayedCall(260, () => {
+      void this.playOpeningFlow(flowToken);
+    });
   }
 
   private createArena() {
@@ -231,77 +242,195 @@ export class BattleScene extends Phaser.Scene {
     this.views.set(rightFighter.id, rightView);
     this.hp.set(leftFighter.id, leftFighter.maxHp);
     this.hp.set(rightFighter.id, rightFighter.maxHp);
+    leftView.container.setVisible(false);
+    rightView.container.setVisible(false);
+  }
+
+  private async playOpeningFlow(flowToken: number) {
+    const fighters = [...this.views.values()];
+    if (!fighters.length || !this.isFlowActive(flowToken)) {
+      return;
+    }
+
+    await Promise.all(fighters.map((view) => this.playEntrance(view)));
+    if (!this.isFlowActive(flowToken)) {
+      return;
+    }
+
+    fighters.forEach((view) => this.startIdle(view));
+    await this.playCountdown();
+    if (!this.isFlowActive(flowToken)) {
+      return;
+    }
+
+    await this.fadeSlotReels(true);
+    if (this.isFlowActive(flowToken)) {
+      void this.playNextTurn();
+    }
+  }
+
+  private async playEntrance(view: FighterView) {
+    view.container.setVisible(true);
+    view.container.setAlpha(1);
+    view.slotGroup.setVisible(false).setAlpha(0);
+
+    if (view.atlas?.metadata.animations.entrance?.frames.length) {
+      await this.playAtlasSequence(view, "entrance", { returnToIdle: true });
+      return;
+    }
+
+    const targetX = view.container.x;
+    view.container.setX(targetX - view.facing * 86);
+    view.container.setAlpha(0);
+    await this.tweenPromise(view.container, {
+      x: targetX,
+      alpha: 1,
+      duration: 520,
+      ease: "Cubic.easeOut",
+    });
+    this.startIdle(view);
+  }
+
+  private async playCountdown() {
+    for (const label of ["3", "2", "1", "開戰"]) {
+      const isStartCall = label === "開戰";
+      const text = this.add
+        .text(this.scale.width / 2, this.scale.height * 0.42, label, {
+          fontFamily: "serif",
+          fontSize: isStartCall ? "72px" : "64px",
+          fontStyle: "bold",
+          color: isStartCall ? "#facc15" : "#fff7d6",
+          stroke: "#5a0f0f",
+          strokeThickness: isStartCall ? 8 : 6,
+        })
+        .setOrigin(0.5)
+        .setDepth(80)
+        .setAlpha(0)
+        .setScale(0.72);
+
+      await this.tweenPromise(text, {
+        alpha: 1,
+        scale: isStartCall ? 1.08 : 1,
+        duration: 150,
+        ease: "Back.easeOut",
+      });
+      await this.wait(isStartCall ? 560 : 390);
+      await this.tweenPromise(text, {
+        alpha: 0,
+        scale: isStartCall ? 1.24 : 1.12,
+        duration: isStartCall ? 220 : 160,
+        ease: "Quad.easeIn",
+      });
+      text.destroy();
+    }
+  }
+
+  private async fadeSlotReels(visible: boolean) {
+    const tweens = [...this.views.values()].map((view) => {
+      this.tweens.killTweensOf(view.slotGroup);
+      if (visible) {
+        view.slotGroup.setVisible(true);
+        view.slotGroup.setAlpha(0);
+        view.slotGroup.setScale(0.92);
+        view.slotResultText.setText("");
+      }
+
+      return this.tweenPromise(view.slotGroup, {
+        alpha: visible ? 1 : 0,
+        scale: visible ? 1 : 0.94,
+        duration: visible ? 360 : 220,
+        ease: visible ? "Quad.easeOut" : "Quad.easeIn",
+        onComplete: () => {
+          if (!visible) {
+            view.slotGroup.setVisible(false);
+          }
+        },
+      });
+    });
+
+    await Promise.all(tweens);
   }
 
   private playNextTurn() {
     if (!this.replay || this.turnIndex >= this.replay.turns.length) {
-      this.finishBattle();
+      void this.finishBattle();
       return;
     }
 
     const entry = this.replay.turns[this.turnIndex];
     this.dispatch("battle-turn-start", entry);
-    this.spinSlots(entry);
+    void this.playTurn(entry);
   }
 
-  private spinSlots(entry: BattleLogEntry) {
+  private async playTurn(entry: BattleLogEntry) {
+    await this.spinSlots(entry);
+    await this.resolveVisuals(entry);
+    this.dispatch("battle-turn-resolved", entry);
+    this.turnIndex += 1;
+    await this.wait(340);
+    void this.playNextTurn();
+  }
+
+  private spinSlots(entry: BattleLogEntry): Promise<void> {
     const attackerView = this.views.get(entry.attacker);
     const defenderView = this.views.get(entry.defender);
     if (!attackerView || !defenderView) {
-      return;
+      return Promise.resolve();
     }
 
-    const attackCycle: AttackReelSymbol[] = ["WeakAttack", "StrongAttack", "Special"];
-    const defenseCycle: DefenseReelSymbol[] = ["Block", "Dodge", "Counter", "RainbowReflect"];
-    let ticks = 0;
+    return new Promise((resolve) => {
+      const attackCycle: AttackReelSymbol[] = ["WeakAttack", "StrongAttack", "Special"];
+      const defenseCycle: DefenseReelSymbol[] = ["Block", "Dodge", "Counter", "RainbowReflect"];
+      let ticks = 0;
 
-    this.setSlotResult(attackerView, "공격 슬롯", "#fde68a", 0.72);
-    this.setSlotResult(defenderView, "방어 슬롯", "#bfdbfe", 0.72);
+      this.setSlotResult(attackerView, "공격 슬롯", "#fde68a", 0.72);
+      this.setSlotResult(defenderView, "방어 슬롯", "#bfdbfe", 0.72);
 
-    this.time.addEvent({
-      delay: 76,
-      repeat: 12,
-      callback: () => {
-        attackerView.reelIcons.forEach((icon, index) => {
-          this.rollReelIcon(icon, ATTACK_ICON_KEYS[attackCycle[(ticks + index) % attackCycle.length]]);
-        });
-        defenderView.reelIcons.forEach((icon, index) => {
-          this.rollReelIcon(icon, DEFENSE_ICON_KEYS[defenseCycle[(ticks + index) % defenseCycle.length]]);
-        });
-        ticks += 1;
-
-        if (ticks >= 13) {
+      this.time.addEvent({
+        delay: 76,
+        repeat: 12,
+        callback: () => {
           attackerView.reelIcons.forEach((icon, index) => {
-            this.stopReelIcon(
-              icon,
-              ATTACK_ICON_KEYS[entry.attackReels[index]],
-              entry.attackAction === "AttackFail" ? 0xfca5a5 : 0xfde68a,
-              index,
-            );
+            this.rollReelIcon(icon, ATTACK_ICON_KEYS[attackCycle[(ticks + index) % attackCycle.length]]);
           });
           defenderView.reelIcons.forEach((icon, index) => {
-            this.stopReelIcon(
-              icon,
-              DEFENSE_ICON_KEYS[entry.defenseReels[index]],
-              entry.defenseAction === "DefenseFail" ? 0xfca5a5 : 0xbfdbfe,
-              index,
-            );
+            this.rollReelIcon(icon, DEFENSE_ICON_KEYS[defenseCycle[(ticks + index) % defenseCycle.length]]);
           });
-          this.setSlotResult(
-            attackerView,
-            `공격: ${ATTACK_LABELS[entry.attackAction]}`,
-            entry.attackAction === "AttackFail" ? "#fca5a5" : "#fde68a",
-            1,
-          );
-          this.setSlotResult(
-            defenderView,
-            `방어: ${DEFENSE_LABELS[entry.defenseAction]}`,
-            entry.defenseAction === "DefenseFail" ? "#fca5a5" : "#bfdbfe",
-            1,
-          );
-          this.time.delayedCall(360, () => this.resolveVisuals(entry));
-        }
-      },
+          ticks += 1;
+
+          if (ticks >= 13) {
+            attackerView.reelIcons.forEach((icon, index) => {
+              this.stopReelIcon(
+                icon,
+                ATTACK_ICON_KEYS[entry.attackReels[index]],
+                entry.attackAction === "AttackFail" ? 0xfca5a5 : 0xfde68a,
+                index,
+              );
+            });
+            defenderView.reelIcons.forEach((icon, index) => {
+              this.stopReelIcon(
+                icon,
+                DEFENSE_ICON_KEYS[entry.defenseReels[index]],
+                entry.defenseAction === "DefenseFail" ? 0xfca5a5 : 0xbfdbfe,
+                index,
+              );
+            });
+            this.setSlotResult(
+              attackerView,
+              `공격: ${ATTACK_LABELS[entry.attackAction]}`,
+              entry.attackAction === "AttackFail" ? "#fca5a5" : "#fde68a",
+              1,
+            );
+            this.setSlotResult(
+              defenderView,
+              `방어: ${DEFENSE_LABELS[entry.defenseAction]}`,
+              entry.defenseAction === "DefenseFail" ? "#fca5a5" : "#bfdbfe",
+              1,
+            );
+            this.time.delayedCall(360, resolve);
+          }
+        },
+      });
     });
   }
 
@@ -357,7 +486,7 @@ export class BattleScene extends Phaser.Scene {
     });
   }
 
-  private resolveVisuals(entry: BattleLogEntry) {
+  private async resolveVisuals(entry: BattleLogEntry) {
     const attackerView = this.views.get(entry.attacker);
     const defenderView = this.views.get(entry.defender);
     if (!attackerView || !defenderView) {
@@ -369,26 +498,29 @@ export class BattleScene extends Phaser.Scene {
     const attackerStartX = attackerView.container.x;
     const attackMotion = motionForAttack(entry.attackAction);
     const defenseMotion = motionForDefense(entry.defenseAction);
+    const motionPromises: Promise<void>[] = [];
 
     if (attackMotion) {
-      this.playMotion(attackerView, attackMotion);
+      motionPromises.push(this.playMotion(attackerView, attackMotion));
     }
     if (defenseMotion) {
-      this.playMotion(defenderView, defenseMotion);
+      motionPromises.push(this.playMotion(defenderView, defenseMotion));
     }
 
-    this.tweens.add({
-      targets: attackerView.container,
+    const lungePromise = this.tweenPromise(attackerView.container, {
       x: attackerStartX + moveDistance * direction,
       yoyo: true,
       duration: 130,
       ease: "Quad.easeOut",
     });
 
+    await Promise.all([...motionPromises, lungePromise]);
+
+    const hurtPromises: Promise<void>[] = [];
     if (entry.targetDamage > 0) {
       this.applyDamage(entry.defender, entry.targetDamage);
       this.showFloatingDamage(defenderView, `-${entry.targetDamage}`, "#fca5a5");
-      this.time.delayedCall(140, () => this.playMotion(defenderView, "hurt"));
+      hurtPromises.push(this.playMotion(defenderView, "hurt"));
       this.flash(defenderView, 0xffefef);
       this.cameras.main.shake(90, 0.004);
     }
@@ -396,7 +528,7 @@ export class BattleScene extends Phaser.Scene {
     if (entry.reflectedDamage > 0) {
       this.applyDamage(entry.attacker, entry.reflectedDamage);
       this.showFloatingDamage(attackerView, `반사 -${entry.reflectedDamage}`, "#c084fc");
-      this.time.delayedCall(140, () => this.playMotion(attackerView, "hurt"));
+      hurtPromises.push(this.playMotion(attackerView, "hurt"));
       this.flash(attackerView, 0xc084fc);
       this.addBurst(attackerView.container.x, attackerView.container.y - 20, 0x67e8f9);
     } else if (entry.attackAction === "Special") {
@@ -407,86 +539,130 @@ export class BattleScene extends Phaser.Scene {
       this.cameras.main.shake(70, 0.0025);
     }
 
-    this.dispatch("battle-turn-resolved", entry);
-    this.turnIndex += 1;
-    this.time.delayedCall(880, () => this.playNextTurn());
+    await Promise.all(hurtPromises);
   }
 
-  private playMotion(view: FighterView, motion: CharacterMotion) {
+  private playMotion(view: FighterView, motion: CharacterMotion, options: MotionPlaybackOptions = {}) {
+    const returnToIdle = options.returnToIdle ?? true;
     view.animationTimer?.remove(false);
     view.animationToken += 1;
     const animationToken = view.animationToken;
 
     if (view.atlas) {
-      this.playAtlasMotion(view, motion, animationToken);
-      return;
+      return this.playAtlasMotion(view, motion, animationToken, { returnToIdle });
     }
 
-    let frameIndex = 0;
-    const applyFrame = () => {
-      if (view.animationToken !== animationToken) {
-        return;
-      }
-      view.sprite.setTexture(getAnimationFrameKey(view.fighterId, motion, frameIndex));
-      view.sprite.setFlipX(view.facing === -1);
-      frameIndex += 1;
-    };
-
-    applyFrame();
-    view.animationTimer = this.time.addEvent({
-      delay: 84,
-      repeat: CHARACTER_FRAME_COUNT - 2,
-      callback: () => {
+    return new Promise<void>((resolve) => {
+      let frameIndex = 0;
+      const finish = () => {
         if (view.animationToken !== animationToken) {
+          resolve();
           return;
         }
-        applyFrame();
-        if (frameIndex >= CHARACTER_FRAME_COUNT) {
-          this.time.delayedCall(90, () => {
-            if (view.animationToken !== animationToken) {
-              return;
-            }
+
+        if (returnToIdle) {
+          this.startIdle(view);
+        }
+        resolve();
+      };
+      const applyFrame = () => {
+        if (view.animationToken !== animationToken) {
+          resolve();
+          return;
+        }
+
+        view.sprite.setTexture(getAnimationFrameKey(view.fighterId, motion, frameIndex));
+        view.sprite.setFlipX(view.facing === -1);
+        frameIndex += 1;
+
+        if (frameIndex < CHARACTER_FRAME_COUNT) {
+          view.animationTimer = this.time.delayedCall(84, applyFrame);
+          return;
+        }
+
+        view.animationTimer = this.time.delayedCall(90, () => {
+          if (view.animationToken === animationToken && returnToIdle) {
             view.sprite.setTexture(getAnimationFrameKey(view.fighterId, "weakAttack", 0));
             view.sprite.setFlipX(view.facing === -1);
-          });
-        }
-      },
+          }
+          finish();
+        });
+      };
+
+      applyFrame();
     });
   }
 
-  private playAtlasMotion(view: FighterView, motion: CharacterMotion, animationToken: number) {
+  private playAtlasMotion(
+    view: FighterView,
+    motion: CharacterMotion,
+    animationToken: number,
+    options: MotionPlaybackOptions = {},
+  ) {
     if (!view.atlas) {
-      return;
+      return Promise.resolve();
     }
 
     const animationName = getAtlasAnimationName(motion);
-    const animation = view.atlas.metadata.animations[animationName];
-    if (!animation?.frames.length) {
-      this.applyAtlasFrame(view, "idle", 0);
-      return;
+    return this.playAtlasAnimation(view, animationName, animationToken, options);
+  }
+
+  private playAtlasSequence(view: FighterView, animationName: string, options: MotionPlaybackOptions = {}) {
+    view.animationTimer?.remove(false);
+    view.animationToken += 1;
+    return this.playAtlasAnimation(view, animationName, view.animationToken, options);
+  }
+
+  private playAtlasAnimation(
+    view: FighterView,
+    animationName: string,
+    animationToken: number,
+    options: MotionPlaybackOptions = {},
+  ) {
+    if (!view.atlas) {
+      return Promise.resolve();
     }
 
-    let frameIndex = 0;
-    const playNextFrame = () => {
-      if (view.animationToken !== animationToken) {
-        return;
+    const animation = view.atlas.metadata.animations[animationName];
+    if (!animation?.frames.length) {
+      if (options.returnToIdle ?? true) {
+        this.startIdle(view);
       }
+      return Promise.resolve();
+    }
 
-      const delay = this.applyAtlasFrame(view, animationName, frameIndex);
-      frameIndex += 1;
-      if (frameIndex < animation.frames.length) {
-        view.animationTimer = this.time.delayedCall(delay, playNextFrame);
-        return;
-      }
-
-      view.animationTimer = this.time.delayedCall(Math.max(delay, 90), () => {
-        if (view.animationToken === animationToken) {
-          this.applyAtlasFrame(view, "idle", 0);
+    return new Promise<void>((resolve) => {
+      let frameIndex = 0;
+      let resolved = false;
+      const finish = () => {
+        if (resolved) {
+          return;
         }
-      });
-    };
 
-    playNextFrame();
+        resolved = true;
+        if (view.animationToken === animationToken && (options.returnToIdle ?? true)) {
+          this.startIdle(view);
+        }
+        resolve();
+      };
+      const playNextFrame = () => {
+        if (view.animationToken !== animationToken) {
+          finish();
+          return;
+        }
+
+        const delay = this.applyAtlasFrame(view, animationName, frameIndex);
+        frameIndex += 1;
+        if (frameIndex < animation.frames.length) {
+          view.animationTimer = this.time.delayedCall(delay, playNextFrame);
+          return;
+        }
+
+        view.animationTimer = this.time.delayedCall(Math.max(delay, 90), finish);
+      };
+
+      playNextFrame();
+    });
   }
 
   private applyAtlasFrame(view: FighterView, animationName: string, frameIndex: number) {
@@ -503,10 +679,36 @@ export class BattleScene extends Phaser.Scene {
     const { frameName, frame } = frameData;
     view.sprite.setTexture(definition.textureKey, getSpriteAtlasFrameKey(definition, frameName));
     view.sprite.setOrigin(frame.pivotX / frame.w, frame.pivotY / frame.h);
-    view.sprite.setPosition(-frame.offsetX, 68 - frame.offsetY);
+    view.sprite.setPosition(view.facing === -1 ? frame.offsetX : -frame.offsetX, 68 - frame.offsetY);
     view.sprite.setScale(1);
     view.sprite.setFlipX(view.facing === -1);
     return frame.duration || 84;
+  }
+
+  private startIdle(view: FighterView) {
+    view.animationTimer?.remove(false);
+    view.animationToken += 1;
+    const animationToken = view.animationToken;
+
+    if (!view.atlas?.metadata.animations.idle?.frames.length) {
+      view.sprite.setTexture(getAnimationFrameKey(view.fighterId, "weakAttack", 0));
+      view.sprite.setFlipX(view.facing === -1);
+      return;
+    }
+
+    const frameTotal = view.atlas.metadata.animations.idle.frames.length;
+    let frameIndex = 0;
+    const playNextFrame = () => {
+      if (view.animationToken !== animationToken) {
+        return;
+      }
+
+      const delay = this.applyAtlasFrame(view, "idle", frameIndex);
+      frameIndex = (frameIndex + 1) % frameTotal;
+      view.animationTimer = this.time.delayedCall(delay, playNextFrame);
+    };
+
+    playNextFrame();
   }
 
   private showFloatingDamage(view: FighterView, text: string, color: string) {
@@ -598,13 +800,24 @@ export class BattleScene extends Phaser.Scene {
     });
   }
 
-  private finishBattle() {
-    if (!this.replay) {
+  private async finishBattle() {
+    if (!this.replay || this.finishStarted) {
       return;
     }
 
+    this.finishStarted = true;
+    this.battleFlowToken += 1;
     const winnerView = this.views.get(this.replay.winner);
+    const loserId = this.replay.left === this.replay.winner ? this.replay.right : this.replay.left;
+    const loserView = this.views.get(loserId);
+    await this.fadeSlotReels(false);
+
+    if (loserView) {
+      await this.playDeath(loserView);
+    }
+
     if (winnerView) {
+      this.startIdle(winnerView);
       this.tweens.add({
         targets: winnerView.container,
         y: winnerView.container.y - 18,
@@ -613,10 +826,53 @@ export class BattleScene extends Phaser.Scene {
         duration: 160,
       });
     }
+
+    const winner = FIGHTER_BY_ID[this.replay.winner];
+    const banner = this.add.container(this.scale.width / 2, this.scale.height * 0.42).setDepth(90);
+    const plate = this.add.rectangle(0, 0, 520, 104, 0x090909, 0.72).setStrokeStyle(3, 0xfacc15);
+    const label = this.add
+      .text(0, -8, `勝者 ${this.fighterLabel(winner)}`, {
+        fontFamily: "serif",
+        fontSize: "34px",
+        fontStyle: "bold",
+        color: "#fef3c7",
+        stroke: "#5a0f0f",
+        strokeThickness: 6,
+      })
+      .setOrigin(0.5);
+    banner.add([plate, label]);
+    banner.setAlpha(0).setScale(0.92);
+    await this.tweenPromise(banner, {
+      alpha: 1,
+      scale: 1,
+      duration: 260,
+      ease: "Back.easeOut",
+    });
+    await this.wait(3000);
     this.dispatch("battle-complete", this.replay);
   }
 
+  private async playDeath(view: FighterView) {
+    view.animationTimer?.remove(false);
+
+    if (view.atlas?.metadata.animations.death?.frames.length) {
+      await this.playAtlasSequence(view, "death", { returnToIdle: false });
+      return;
+    }
+
+    await this.tweenPromise(view.container, {
+      alpha: 0.35,
+      y: view.container.y + 24,
+      angle: view.facing * -8,
+      duration: 620,
+      ease: "Cubic.easeIn",
+    });
+  }
+
   private roundLabel(round: BattleReplay["round"]) {
+    if (round === "RoundOf16") {
+      return "16강";
+    }
     if (round === "Quarterfinal") {
       return "1회전";
     }
@@ -628,5 +884,33 @@ export class BattleScene extends Phaser.Scene {
 
   private dispatch(name: string, detail: unknown) {
     window.dispatchEvent(new CustomEvent(name, { detail }));
+  }
+
+  private isFlowActive(flowToken: number) {
+    return this.battleFlowToken === flowToken && !this.finishStarted;
+  }
+
+  private wait(duration: number) {
+    return new Promise<void>((resolve) => {
+      this.time.delayedCall(duration, resolve);
+    });
+  }
+
+  private tweenPromise(
+    target: Phaser.GameObjects.GameObject | Phaser.GameObjects.GameObject[],
+    config: Omit<Phaser.Types.Tweens.TweenBuilderConfig, "targets">,
+  ) {
+    return new Promise<void>((resolve) => {
+      this.tweens.add({
+        ...config,
+        targets: target,
+        onComplete: (...args) => {
+          if (typeof config.onComplete === "function") {
+            config.onComplete(...args);
+          }
+          resolve();
+        },
+      });
+    });
   }
 }

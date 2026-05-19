@@ -96,8 +96,8 @@ export const SPRITE_ATLAS_DEFINITIONS: SpriteAtlasDefinition[] = [
 ];
 
 const ATLAS_ANIMATION_BY_MOTION: Record<CharacterMotion, string> = {
-  weakAttack: "l_attack",
-  strongAttack: "s_attack",
+  weakAttack: "s_attack",
+  strongAttack: "l_attack",
   special: "sp_attack",
   block: "guard",
   dodge: "dodge",

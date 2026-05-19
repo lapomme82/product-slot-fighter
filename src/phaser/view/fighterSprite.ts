@@ -16,6 +16,7 @@ export interface FighterView {
   atlas: SpriteAtlasRuntime | null;
   animationTimer: Phaser.Time.TimerEvent | null;
   animationToken: number;
+  slotGroup: Phaser.GameObjects.Container;
   slotBox: Phaser.GameObjects.Rectangle;
   slotResultText: Phaser.GameObjects.Text;
   reelIcons: [Phaser.GameObjects.Image, Phaser.GameObjects.Image, Phaser.GameObjects.Image];
@@ -68,15 +69,19 @@ export function createFighterView(
   const reelIcons = [-52, 0, 52].map((offsetX) =>
     scene.add.image(offsetX, -128, "slot-weak-attack").setDisplaySize(34, 34),
   ) as [Phaser.GameObjects.Image, Phaser.GameObjects.Image, Phaser.GameObjects.Image];
+  const slotGroup = scene.add.container(0, 0, [
+    slotResultText,
+    slotBox,
+    ...reelBacks,
+    ...reelIcons,
+  ]);
+  slotGroup.setVisible(false).setAlpha(0);
 
   container.add([
     shadow,
     sprite,
     nameText,
-    slotResultText,
-    slotBox,
-    ...reelBacks,
-    ...reelIcons,
+    slotGroup,
   ]);
 
   return {
@@ -87,6 +92,7 @@ export function createFighterView(
     atlas,
     animationTimer: null,
     animationToken: 0,
+    slotGroup,
     slotBox,
     slotResultText,
     reelIcons,
