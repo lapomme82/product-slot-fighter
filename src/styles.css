@@ -226,6 +226,63 @@ h2 {
   font-size: 17px;
 }
 
+.title-action {
+  position: relative;
+  min-width: 250px;
+  overflow: hidden;
+  border: 1px solid rgba(245, 197, 95, 0.88);
+  background:
+    linear-gradient(180deg, rgba(255, 244, 200, 0.16), transparent 38%),
+    linear-gradient(180deg, #2b1510, #0f0a08 58%, #030303);
+  color: #ffecc2;
+  font-size: 20px;
+  text-shadow: 0 2px 0 rgba(0, 0, 0, 0.84), 0 0 16px rgba(246, 197, 84, 0.3);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.16),
+    inset 0 -16px 28px rgba(0, 0, 0, 0.3),
+    0 0 0 1px rgba(0, 0, 0, 0.64),
+    0 16px 32px rgba(0, 0, 0, 0.58);
+}
+
+.title-action::before {
+  position: absolute;
+  inset: 1px;
+  border: 1px solid rgba(117, 75, 31, 0.72);
+  border-radius: 5px;
+  content: "";
+  pointer-events: none;
+}
+
+.title-action::after {
+  position: absolute;
+  top: 50%;
+  right: 18px;
+  width: 7px;
+  height: 26px;
+  background: linear-gradient(180deg, #b91c1c, #5f0f0f);
+  border: 1px solid rgba(252, 211, 77, 0.36);
+  content: "";
+  opacity: 0.86;
+  transform: translateY(-50%);
+}
+
+.title-action:hover {
+  border-color: #f8d36c;
+  background:
+    linear-gradient(180deg, rgba(255, 244, 200, 0.22), transparent 40%),
+    linear-gradient(180deg, #3a1a12, #130b08 58%, #030303);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.2),
+    inset 0 -16px 28px rgba(0, 0, 0, 0.28),
+    0 0 0 1px rgba(0, 0, 0, 0.64),
+    0 18px 36px rgba(0, 0, 0, 0.62),
+    0 0 28px rgba(245, 197, 95, 0.18);
+}
+
+.title-action:active {
+  transform: translateY(1px);
+}
+
 .character-select-screen {
   min-height: 680px;
   padding: 22px;
@@ -1035,6 +1092,11 @@ h2 {
   .title-logo {
     width: clamp(280px, 86vw, 620px);
     max-height: 240px;
+  }
+
+  .title-action {
+    min-width: min(250px, 82vw);
+    font-size: 18px;
   }
 
   .select-heading,

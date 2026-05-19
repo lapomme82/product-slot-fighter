@@ -215,7 +215,7 @@ export function mountApp(root: HTMLElement, game: Phaser.Game): AppController {
         <div class="title-copy">
           <h2 class="sr-only">무협 슬롯 토너먼트</h2>
           <img class="title-logo" src="${assetUrl(TITLE_LOGO_PATH)}" alt="무협 슬롯 토너먼트 타이틀 로고" />
-          <button class="big-action" data-action="open-select">캐릭터 선택</button>
+          <button class="big-action title-action" data-action="open-select">토너먼트</button>
         </div>
       </section>
     `;
