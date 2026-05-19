@@ -98,13 +98,26 @@
 - 소개 영상 종료 후 최종 이미지로 넘어갈 때만 영상 페이드아웃을 유지하고, 최종 이미지는 즉시 표시되도록 정리했습니다.
 - 각성 캐릭터 토글 시 최종 이미지 직행 대신 기본 이미지, 소개 영상, 최종 이미지 흐름을 다시 타도록 수정했습니다.
 
+## 2026-05-19 퇴근 전 동기화
+
+- 현재 PC에서 진행한 타이틀 화면, 버튼 이미지, 상단 버튼 표시 조건, 캐릭터 선택 미디어 전환 작업을 모두 커밋하고 `origin/main`에 푸시했습니다.
+- 집 PC에서는 작업 시작 전에 `git pull --ff-only`를 실행하면 최신 작업을 바로 이어받을 수 있습니다.
+- 최신 기능 변경 커밋은 `e3cb6a3 Refine character select reveal flow`입니다.
+
 ## 최근 Git 히스토리
 
-- `de9c8b3` Add awakened character reveal roster
-- `104555b` Add awakened fighter selection
-- `6023349` Add character select transition
-- `3894712` Fix character select reveal flicker
-- `83c4982` Initial GitHub Pages deploy
+- `e3cb6a3` Refine character select reveal flow
+- `bf55dc6` Hide pause button outside battles
+- `b8d378c` Hide home button on title screen
+- `28a600a` Scale down title button
+- `927fce6` Replace title button image
+- `8c9f98f` Trim transparent title button asset
+- `4c5d3a5` Use image asset for title button
+- `be04edf` Restyle title tournament button
+- `20c5bfd` Remove top header title text
+- `3a7956c` Remove title description text
+- `6223356` Remove title eyebrow text
+- `0194746` Add title logo to title screen
 
 ## 로컬 간 작업 규칙
 
