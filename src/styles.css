@@ -58,7 +58,7 @@ input {
 .topbar {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-end;
   gap: 18px;
   max-width: 1540px;
   margin: 0 auto 16px;

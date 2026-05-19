@@ -96,10 +96,6 @@ export function mountApp(root: HTMLElement, game: Phaser.Game): AppController {
   root.innerHTML = `
     <div class="shell">
       <header class="topbar">
-        <div>
-          <p class="eyebrow">Pixel Wuxia Auto Tournament</p>
-          <h1>무협 슬롯 토너먼트</h1>
-        </div>
         <div class="controls">
           <button id="home-button">타이틀</button>
           <button id="pause-button" disabled>일시정지</button>
