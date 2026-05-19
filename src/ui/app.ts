@@ -219,7 +219,6 @@ export function mountApp(root: HTMLElement, game: Phaser.Game): AppController {
         <div class="title-copy">
           <h2 class="sr-only">무협 슬롯 토너먼트</h2>
           <img class="title-logo" src="${assetUrl(TITLE_LOGO_PATH)}" alt="무협 슬롯 토너먼트 타이틀 로고" />
-          <p>엔트리를 구성하고 슬롯 릴의 운으로 토너먼트의 승자를 가립니다.</p>
           <button class="big-action" data-action="open-select">캐릭터 선택</button>
         </div>
       </section>
