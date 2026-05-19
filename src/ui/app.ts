@@ -183,6 +183,7 @@ export function mountApp(root: HTMLElement, game: Phaser.Game): AppController {
     refs.gameRoot.classList.toggle("is-hidden", !isBattle);
     refs.logPanel.classList.toggle("is-hidden", !isBattle);
     refs.homeButton.disabled = nextMode === "title";
+    refs.homeButton.classList.toggle("is-hidden", nextMode === "title");
     refs.pauseButton.disabled = !isBattle;
     if (!isBattle) {
       paused = false;
