@@ -42,6 +42,10 @@
 - 배경 위에서 로고가 선명하게 보이도록 크기, 위치, 드롭 섀도, 모바일 크기 제한을 적용했습니다.
 - 검증: `npm test` 통과, `npm run build` 통과, 개발 서버에서 로고 이미지 `200 OK` 확인.
 
+## 2026-05-19 타이틀 보조 문구 제거
+
+- 타이틀 화면 로고 위에 표시되던 `Wuxia Slot Fight` 문구를 제거했습니다.
+
 ## 최근 Git 히스토리
 
 - `de9c8b3` Add awakened character reveal roster
