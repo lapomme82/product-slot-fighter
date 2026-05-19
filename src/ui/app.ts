@@ -44,6 +44,7 @@ const PRELOADED_IMAGES = new Set<string>();
 const SPECIAL_SELECT_FIGHTER_IDS = new Set<CharacterId>(["truth-tracker", "glass-heart"]);
 const TITLE_BACKGROUND_PATH = "/assets/stages/title-office-battle.png";
 const TITLE_LOGO_PATH = "/assets/ui/title-logo.png";
+const TITLE_BUTTON_PATH = "/assets/ui/title-tournament-button.png";
 const SELECT_PROFILE_HOLD_MS = 2000;
 const SELECT_PROFILE_SWITCH_OUT_MS = 300;
 const SELECT_PROFILE_ENTER_MS = 460;
@@ -209,13 +210,16 @@ export function mountApp(root: HTMLElement, game: Phaser.Game): AppController {
     setMode("title");
     preloadImage(assetUrl(TITLE_BACKGROUND_PATH));
     preloadImage(assetUrl(TITLE_LOGO_PATH));
+    preloadImage(assetUrl(TITLE_BUTTON_PATH));
     refs.stage.innerHTML = `
       <section class="title-screen">
         <div class="title-background" style="background-image: url('${assetUrl(TITLE_BACKGROUND_PATH)}')" aria-hidden="true"></div>
         <div class="title-copy">
           <h2 class="sr-only">무협 슬롯 토너먼트</h2>
           <img class="title-logo" src="${assetUrl(TITLE_LOGO_PATH)}" alt="무협 슬롯 토너먼트 타이틀 로고" />
-          <button class="big-action title-action" data-action="open-select">토너먼트</button>
+          <button class="title-image-button" data-action="open-select" aria-label="토너먼트">
+            <img src="${assetUrl(TITLE_BUTTON_PATH)}" alt="" aria-hidden="true" />
+          </button>
         </div>
       </section>
     `;
