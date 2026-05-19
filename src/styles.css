@@ -156,18 +156,34 @@ h2 {
   place-items: center;
   padding: 32px;
   overflow: hidden;
-  background:
-    linear-gradient(90deg, rgba(4, 7, 13, 0.78), rgba(4, 7, 13, 0.24) 45%, rgba(4, 7, 13, 0.72)),
-    linear-gradient(180deg, rgba(4, 7, 13, 0.2), rgba(4, 7, 13, 0.74)),
-    var(--title-background-image);
+  background: #070707;
+  text-align: center;
+}
+
+.title-background,
+.title-screen::after {
+  position: absolute;
+  inset: 0;
+}
+
+.title-background {
+  z-index: 0;
   background-position: center center;
   background-size: cover;
-  text-align: center;
+}
+
+.title-screen::after {
+  z-index: 1;
+  background:
+    linear-gradient(90deg, rgba(4, 7, 13, 0.78), rgba(4, 7, 13, 0.24) 45%, rgba(4, 7, 13, 0.72)),
+    linear-gradient(180deg, rgba(4, 7, 13, 0.2), rgba(4, 7, 13, 0.74));
+  content: "";
+  pointer-events: none;
 }
 
 .title-copy {
   position: relative;
-  z-index: 1;
+  z-index: 2;
   display: grid;
   justify-items: center;
   gap: 16px;

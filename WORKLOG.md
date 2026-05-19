@@ -29,6 +29,12 @@
 - 배경 위 타이틀 문구가 읽히도록 어두운 오버레이와 텍스트 그림자를 적용했습니다.
 - 검증: `npm test` 통과, `npm run build` 통과.
 
+## 2026-05-19 타이틀 배경 렌더링 보강
+
+- GitHub Pages에서 배경이 보이지 않는 상황을 줄이기 위해 CSS 변수 배경 대신 실제 `.title-background` DOM 레이어를 추가했습니다.
+- 오버레이는 `.title-screen::after`로 분리해 이미지 레이어가 명확히 렌더링되도록 수정했습니다.
+- 검증: `npm test` 통과, `npm run build` 통과.
+
 ## 최근 Git 히스토리
 
 - `de9c8b3` Add awakened character reveal roster

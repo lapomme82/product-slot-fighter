@@ -212,7 +212,8 @@ export function mountApp(root: HTMLElement, game: Phaser.Game): AppController {
     setMode("title");
     preloadImage(assetUrl(TITLE_BACKGROUND_PATH));
     refs.stage.innerHTML = `
-      <section class="title-screen" style="--title-background-image: url('${assetUrl(TITLE_BACKGROUND_PATH)}')">
+      <section class="title-screen">
+        <div class="title-background" style="background-image: url('${assetUrl(TITLE_BACKGROUND_PATH)}')" aria-hidden="true"></div>
         <div class="title-copy">
           <p class="eyebrow">Wuxia Slot Fight</p>
           <h2>무협 슬롯 토너먼트</h2>
