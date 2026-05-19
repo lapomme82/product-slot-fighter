@@ -185,6 +185,7 @@ export function mountApp(root: HTMLElement, game: Phaser.Game): AppController {
     refs.homeButton.disabled = nextMode === "title";
     refs.homeButton.classList.toggle("is-hidden", nextMode === "title");
     refs.pauseButton.disabled = !isBattle;
+    refs.pauseButton.classList.toggle("is-hidden", !isBattle);
     if (!isBattle) {
       paused = false;
       refs.pauseButton.textContent = "일시정지";
