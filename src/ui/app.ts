@@ -42,6 +42,7 @@ interface SelectMediaProfile {
 const SCENE_KEYS = ["MenuScene", "TournamentScene", "BattleScene", "ResultScene"];
 const PRELOADED_IMAGES = new Set<string>();
 const SPECIAL_SELECT_FIGHTER_IDS = new Set<CharacterId>(["truth-tracker", "glass-heart"]);
+const TITLE_BACKGROUND_PATH = "/assets/stages/title-office-battle.png";
 const SELECT_PROFILE_HOLD_MS = 2000;
 const SELECT_PROFILE_SWITCH_OUT_MS = 300;
 const SELECT_PROFILE_ENTER_MS = 460;
@@ -209,8 +210,9 @@ export function mountApp(root: HTMLElement, game: Phaser.Game): AppController {
 
   function renderTitle() {
     setMode("title");
+    preloadImage(assetUrl(TITLE_BACKGROUND_PATH));
     refs.stage.innerHTML = `
-      <section class="title-screen">
+      <section class="title-screen" style="--title-background-image: url('${assetUrl(TITLE_BACKGROUND_PATH)}')">
         <div class="title-copy">
           <p class="eyebrow">Wuxia Slot Fight</p>
           <h2>무협 슬롯 토너먼트</h2>

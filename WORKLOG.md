@@ -22,6 +22,13 @@
 - 엔트리 배지도 `data-entry-badge`로 분리해 각성 배지와 서로 간섭하지 않게 했습니다.
 - 검증: `npm test` 통과, `npm run build` 통과.
 
+## 2026-05-19 타이틀 배경 적용
+
+- 첨부 이미지를 `public/assets/stages/title-office-battle.png`로 추가했습니다.
+- 타이틀 화면에서 `assetUrl()`로 배경 이미지 URL을 계산해 배포 경로에서도 동작하도록 연결했습니다.
+- 배경 위 타이틀 문구가 읽히도록 어두운 오버레이와 텍스트 그림자를 적용했습니다.
+- 검증: `npm test` 통과, `npm run build` 통과.
+
 ## 최근 Git 히스토리
 
 - `de9c8b3` Add awakened character reveal roster
