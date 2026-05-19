@@ -1,4 +1,5 @@
-import type { AttackAction, DefenseAction, Fighter } from "../simulation/types";
+import type Phaser from "phaser";
+import type { AttackAction, CharacterId, DefenseAction, Fighter } from "../simulation/types";
 
 export const CHARACTER_MOTIONS = [
   "weakAttack",
@@ -15,6 +16,96 @@ export type CharacterMotion = (typeof CHARACTER_MOTIONS)[number];
 
 export const CHARACTER_FRAME_COUNT = 6;
 
+export type SpriteAtlasVariant = "base" | "awakened";
+
+export interface SpriteBoxMetadata {
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+}
+
+export interface SpriteFrameMetadata {
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+  pivotX: number;
+  pivotY: number;
+  offsetX: number;
+  offsetY: number;
+  duration: number;
+  hitboxes: SpriteBoxMetadata[];
+  hurtboxes: SpriteBoxMetadata[];
+}
+
+export interface SpriteAnimationMetadata {
+  loop: boolean;
+  frames: string[];
+}
+
+export interface SpriteAtlasMetadata {
+  image: {
+    name: string;
+    width: number;
+    height: number;
+  } | null;
+  frames: Record<string, SpriteFrameMetadata>;
+  animations: Record<string, SpriteAnimationMetadata>;
+}
+
+export interface SpriteAtlasDefinition {
+  fighterId: CharacterId;
+  variant: SpriteAtlasVariant;
+  textureKey: string;
+  metadataKey: string;
+  imagePath: string;
+  metadataPath: string;
+}
+
+export interface SpriteAtlasRuntime {
+  definition: SpriteAtlasDefinition;
+  metadata: SpriteAtlasMetadata;
+}
+
+export const SPRITE_ATLAS_DEFINITIONS: SpriteAtlasDefinition[] = [
+  {
+    fighterId: "golden-soul-maiden",
+    variant: "base",
+    textureKey: "atlas-golden-soul-maiden",
+    metadataKey: "atlas-meta-golden-soul-maiden",
+    imagePath: "/assets/sprite-atlases/golden-soul-maiden.png",
+    metadataPath: "/assets/sprite-atlases/golden-soul-maiden.json",
+  },
+  {
+    fighterId: "golden-soul-maiden",
+    variant: "awakened",
+    textureKey: "atlas-golden-soul-maiden-awakened",
+    metadataKey: "atlas-meta-golden-soul-maiden-awakened",
+    imagePath: "/assets/sprite-atlases/golden-soul-maiden-awakened.png",
+    metadataPath: "/assets/sprite-atlases/golden-soul-maiden-awakened.json",
+  },
+  {
+    fighterId: "seal-judge",
+    variant: "awakened",
+    textureKey: "atlas-seal-judge-awakened",
+    metadataKey: "atlas-meta-seal-judge-awakened",
+    imagePath: "/assets/sprite-atlases/seal-judge-awakened.png",
+    metadataPath: "/assets/sprite-atlases/seal-judge-awakened.json",
+  },
+];
+
+const ATLAS_ANIMATION_BY_MOTION: Record<CharacterMotion, string> = {
+  weakAttack: "l_attack",
+  strongAttack: "s_attack",
+  special: "sp_attack",
+  block: "guard",
+  dodge: "dodge",
+  counter: "counter",
+  hurt: "hit",
+  grandCounter: "counter",
+};
+
 export function getAnimationFrameKey(
   fighterId: Fighter["id"],
   motion: CharacterMotion,
@@ -29,6 +120,48 @@ export function getAnimationFramePath(
   frameIndex: number,
 ) {
   return `/assets/sprites/${fighterId}/${motion}/${frameIndex.toString().padStart(2, "0")}.png`;
+}
+
+export function getSpriteAtlasDefinition(fighterId: CharacterId, awakened: boolean) {
+  const variant: SpriteAtlasVariant = awakened ? "awakened" : "base";
+  return SPRITE_ATLAS_DEFINITIONS.find((definition) => definition.fighterId === fighterId && definition.variant === variant);
+}
+
+export function getSpriteAtlasFrameKey(definition: SpriteAtlasDefinition, frameName: string) {
+  return `${definition.textureKey}-${frameName}`;
+}
+
+export function getAtlasAnimationName(motion: CharacterMotion) {
+  return ATLAS_ANIMATION_BY_MOTION[motion];
+}
+
+export function getSpriteAtlasRuntime(scene: Phaser.Scene, fighterId: CharacterId, awakened: boolean): SpriteAtlasRuntime | null {
+  const definition = getSpriteAtlasDefinition(fighterId, awakened);
+  if (!definition) {
+    return null;
+  }
+
+  const metadata = scene.cache.json.get(definition.metadataKey) as SpriteAtlasMetadata | undefined;
+  if (!metadata) {
+    return null;
+  }
+
+  return { definition, metadata };
+}
+
+export function getAtlasFrameMetadata(runtime: SpriteAtlasRuntime, animationName: string, frameIndex: number) {
+  const animation = runtime.metadata.animations[animationName];
+  const frameName = animation?.frames[frameIndex];
+  if (!frameName) {
+    return null;
+  }
+
+  const frame = runtime.metadata.frames[frameName];
+  if (!frame) {
+    return null;
+  }
+
+  return { frameName, frame, animation };
 }
 
 export function motionForAttack(action: AttackAction): CharacterMotion | null {

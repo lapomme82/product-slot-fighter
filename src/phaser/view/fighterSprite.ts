@@ -1,5 +1,11 @@
 import Phaser from "phaser";
-import { getAnimationFrameKey } from "../../assets/characterAnimations";
+import {
+  getAtlasFrameMetadata,
+  getAnimationFrameKey,
+  getSpriteAtlasFrameKey,
+  getSpriteAtlasRuntime,
+  type SpriteAtlasRuntime,
+} from "../../assets/characterAnimations";
 import type { Fighter } from "../../simulation/types";
 
 export interface FighterView {
@@ -7,6 +13,7 @@ export interface FighterView {
   sprite: Phaser.GameObjects.Image;
   fighterId: Fighter["id"];
   facing: 1 | -1;
+  atlas: SpriteAtlasRuntime | null;
   animationTimer: Phaser.Time.TimerEvent | null;
   animationToken: number;
   slotBox: Phaser.GameObjects.Rectangle;
@@ -20,16 +27,23 @@ export function createFighterView(
   x: number,
   y: number,
   facing: 1 | -1,
+  awakened = false,
 ): FighterView {
+  const atlas = getSpriteAtlasRuntime(scene, fighter.id, awakened);
+  const idleFrame = atlas ? getAtlasFrameMetadata(atlas, "idle", 0) : null;
   const container = scene.add.container(x, y);
   const shadow = scene.add.ellipse(0, 58, 104, 18, 0x000000, 0.45);
-  const sprite = scene.add
-    .image(0, 68, getAnimationFrameKey(fighter.id, "weakAttack", 0))
-    .setOrigin(0.5, 1)
-    .setScale(0.86)
-    .setFlipX(facing === -1);
+  const sprite = atlas && idleFrame
+    ? scene.add.image(0, 68, atlas.definition.textureKey, getSpriteAtlasFrameKey(atlas.definition, idleFrame.frameName))
+    : scene.add.image(0, 68, getAnimationFrameKey(fighter.id, "weakAttack", 0));
+  sprite.setOrigin(0.5, 1).setScale(atlas ? 1 : 0.86).setFlipX(facing === -1);
+  if (idleFrame) {
+    sprite.setOrigin(idleFrame.frame.pivotX / idleFrame.frame.w, idleFrame.frame.pivotY / idleFrame.frame.h);
+    sprite.setPosition(-idleFrame.frame.offsetX, 68 - idleFrame.frame.offsetY);
+  }
+  const displayName = awakened && fighter.awakened ? fighter.awakened.name : fighter.name;
   const nameText = scene.add
-    .text(0, 94, fighter.name, {
+    .text(0, 94, displayName, {
       fontFamily: "sans-serif",
       fontSize: "18px",
       color: "#fff7d6",
@@ -70,6 +84,7 @@ export function createFighterView(
     sprite,
     fighterId: fighter.id,
     facing,
+    atlas,
     animationTimer: null,
     animationToken: 0,
     slotBox,

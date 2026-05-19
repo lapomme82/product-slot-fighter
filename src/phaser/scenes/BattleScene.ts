@@ -2,7 +2,10 @@ import Phaser from "phaser";
 import {
   CHARACTER_FRAME_COUNT,
   type CharacterMotion,
+  getAtlasAnimationName,
+  getAtlasFrameMetadata,
   getAnimationFrameKey,
+  getSpriteAtlasFrameKey,
   motionForAttack,
   motionForDefense,
 } from "../../assets/characterAnimations";
@@ -207,8 +210,22 @@ export class BattleScene extends Phaser.Scene {
     const leftFighter = FIGHTER_BY_ID[this.replay.left];
     const rightFighter = FIGHTER_BY_ID[this.replay.right];
     const fighterBaselineY = this.scale.height - 143;
-    const leftView = createFighterView(this, leftFighter, this.scale.width * 0.28, fighterBaselineY, 1);
-    const rightView = createFighterView(this, rightFighter, this.scale.width * 0.72, fighterBaselineY, -1);
+    const leftView = createFighterView(
+      this,
+      leftFighter,
+      this.scale.width * 0.28,
+      fighterBaselineY,
+      1,
+      this.awakenedFighterIds.has(leftFighter.id),
+    );
+    const rightView = createFighterView(
+      this,
+      rightFighter,
+      this.scale.width * 0.72,
+      fighterBaselineY,
+      -1,
+      this.awakenedFighterIds.has(rightFighter.id),
+    );
 
     this.views.set(leftFighter.id, leftView);
     this.views.set(rightFighter.id, rightView);
@@ -400,6 +417,11 @@ export class BattleScene extends Phaser.Scene {
     view.animationToken += 1;
     const animationToken = view.animationToken;
 
+    if (view.atlas) {
+      this.playAtlasMotion(view, motion, animationToken);
+      return;
+    }
+
     let frameIndex = 0;
     const applyFrame = () => {
       if (view.animationToken !== animationToken) {
@@ -430,6 +452,61 @@ export class BattleScene extends Phaser.Scene {
         }
       },
     });
+  }
+
+  private playAtlasMotion(view: FighterView, motion: CharacterMotion, animationToken: number) {
+    if (!view.atlas) {
+      return;
+    }
+
+    const animationName = getAtlasAnimationName(motion);
+    const animation = view.atlas.metadata.animations[animationName];
+    if (!animation?.frames.length) {
+      this.applyAtlasFrame(view, "idle", 0);
+      return;
+    }
+
+    let frameIndex = 0;
+    const playNextFrame = () => {
+      if (view.animationToken !== animationToken) {
+        return;
+      }
+
+      const delay = this.applyAtlasFrame(view, animationName, frameIndex);
+      frameIndex += 1;
+      if (frameIndex < animation.frames.length) {
+        view.animationTimer = this.time.delayedCall(delay, playNextFrame);
+        return;
+      }
+
+      view.animationTimer = this.time.delayedCall(Math.max(delay, 90), () => {
+        if (view.animationToken === animationToken) {
+          this.applyAtlasFrame(view, "idle", 0);
+        }
+      });
+    };
+
+    playNextFrame();
+  }
+
+  private applyAtlasFrame(view: FighterView, animationName: string, frameIndex: number) {
+    if (!view.atlas) {
+      return 84;
+    }
+
+    const frameData = getAtlasFrameMetadata(view.atlas, animationName, frameIndex);
+    if (!frameData) {
+      return 84;
+    }
+
+    const { definition } = view.atlas;
+    const { frameName, frame } = frameData;
+    view.sprite.setTexture(definition.textureKey, getSpriteAtlasFrameKey(definition, frameName));
+    view.sprite.setOrigin(frame.pivotX / frame.w, frame.pivotY / frame.h);
+    view.sprite.setPosition(-frame.offsetX, 68 - frame.offsetY);
+    view.sprite.setScale(1);
+    view.sprite.setFlipX(view.facing === -1);
+    return frame.duration || 84;
   }
 
   private showFloatingDamage(view: FighterView, text: string, color: string) {

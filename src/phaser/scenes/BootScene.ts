@@ -2,8 +2,11 @@ import Phaser from "phaser";
 import {
   CHARACTER_FRAME_COUNT,
   CHARACTER_MOTIONS,
+  SPRITE_ATLAS_DEFINITIONS,
+  type SpriteAtlasMetadata,
   getAnimationFrameKey,
   getAnimationFramePath,
+  getSpriteAtlasFrameKey,
 } from "../../assets/characterAnimations";
 import { assetUrl } from "../../assets/paths";
 import { FIGHTERS } from "../../content/fighters";
@@ -46,10 +49,32 @@ export class BootScene extends Phaser.Scene {
     for (const [key, path] of STAGES) {
       this.load.image(key, assetUrl(path));
     }
+    for (const definition of SPRITE_ATLAS_DEFINITIONS) {
+      this.load.image(definition.textureKey, assetUrl(definition.imagePath));
+      this.load.json(definition.metadataKey, assetUrl(definition.metadataPath));
+    }
   }
 
   create() {
+    this.registerSpriteAtlasFrames();
     this.cameras.main.setBackgroundColor(0x111111);
     this.scene.start("MenuScene");
+  }
+
+  private registerSpriteAtlasFrames() {
+    for (const definition of SPRITE_ATLAS_DEFINITIONS) {
+      const texture = this.textures.get(definition.textureKey);
+      const metadata = this.cache.json.get(definition.metadataKey) as SpriteAtlasMetadata | undefined;
+      if (!texture || !metadata) {
+        continue;
+      }
+
+      for (const [frameName, frame] of Object.entries(metadata.frames)) {
+        const frameKey = getSpriteAtlasFrameKey(definition, frameName);
+        if (!texture.has(frameKey)) {
+          texture.add(frameKey, 0, frame.x, frame.y, frame.w, frame.h);
+        }
+      }
+    }
   }
 }
