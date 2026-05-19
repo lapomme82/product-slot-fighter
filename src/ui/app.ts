@@ -46,6 +46,8 @@ const SELECT_PROFILE_HOLD_MS = 2000;
 const SELECT_PROFILE_SWITCH_OUT_MS = 300;
 const SELECT_PROFILE_ENTER_MS = 460;
 const SELECT_LAYER_FADE_MS = 560;
+const SELECT_CARD_FLIP_MS = 720;
+const SELECT_CARD_FLIP_SWAP_MS = 340;
 
 function makeSeed() {
   const random = new Uint32Array(1);
@@ -250,7 +252,8 @@ export function mountApp(root: HTMLElement, game: Phaser.Game): AppController {
             <strong>${fighterDisplayLabel(fighter.id)}</strong>
             <small>${getFighterConcept(fighter.id)}</small>
           </span>
-          ${registered ? "<i>ENTRY</i>" : ""}
+          ${awakened ? '<em class="select-awakened-badge" data-awakened-badge>각성</em>' : ""}
+          ${registered ? '<i data-entry-badge>ENTRY</i>' : ""}
         </button>
       `;
     };
@@ -378,6 +381,12 @@ export function mountApp(root: HTMLElement, game: Phaser.Game): AppController {
     return refs.stage.querySelector<HTMLElement>("[data-select-profile-panel]");
   }
 
+  function getSelectCard(fighterId: CharacterId) {
+    return [...refs.stage.querySelectorAll<HTMLElement>(".select-card[data-fighter-id]")].find(
+      (card) => card.dataset.fighterId === fighterId,
+    );
+  }
+
   function setSelectMediaLayer(layer: "profile" | "video" | "final" | null) {
     const { profileImage, video, finalImage } = getSelectMediaRefs();
     profileImage?.classList.toggle("is-visible", layer === "profile");
@@ -477,6 +486,49 @@ export function mountApp(root: HTMLElement, game: Phaser.Game): AppController {
     }, SELECT_PROFILE_SWITCH_OUT_MS);
   }
 
+  function showSelectMediaImmediately(fighter: Fighter, profile: SelectMediaProfile, layer: "profile" | "final") {
+    if (layer === "final") {
+      showSelectFinalImmediately(fighter, profile);
+      return;
+    }
+    showSelectProfileImmediately(fighter, profile);
+  }
+
+  function playSelectCardFlipTransition(fighter: Fighter, profile: SelectMediaProfile, layer: "profile" | "final") {
+    const token = selectRevealToken + 1;
+    selectRevealToken = token;
+    if (selectRevealTimer) {
+      window.clearTimeout(selectRevealTimer);
+      selectRevealTimer = null;
+    }
+
+    const panel = getSelectProfilePanel();
+    const selectCard = getSelectCard(fighter.id);
+    const { video } = getSelectMediaRefs();
+    video?.pause();
+    panel?.classList.remove("is-switching", "is-entering", "is-flipping");
+    selectCard?.classList.remove("is-flipping");
+    void panel?.offsetHeight;
+    void selectCard?.offsetHeight;
+    panel?.classList.add("is-flipping");
+    selectCard?.classList.add("is-flipping");
+
+    selectRevealTimer = window.setTimeout(() => {
+      if (token !== selectRevealToken) {
+        return;
+      }
+
+      showSelectMediaImmediately(fighter, profile, layer);
+      selectRevealTimer = window.setTimeout(() => {
+        if (token === selectRevealToken) {
+          panel?.classList.remove("is-flipping");
+          selectCard?.classList.remove("is-flipping");
+          selectRevealTimer = null;
+        }
+      }, SELECT_CARD_FLIP_MS - SELECT_CARD_FLIP_SWAP_MS);
+    }, SELECT_CARD_FLIP_SWAP_MS);
+  }
+
   function showStaticSelectMedia(fighter: Fighter) {
     selectRevealToken += 1;
     if (selectRevealTimer) {
@@ -570,6 +622,31 @@ export function mountApp(root: HTMLElement, game: Phaser.Game): AppController {
       .join("");
   }
 
+  function syncSelectCardBadges(card: HTMLElement, registered: boolean, awakened: boolean) {
+    const entryBadge = card.querySelector<HTMLElement>("[data-entry-badge]");
+    if (registered && !entryBadge) {
+      const nextEntryBadge = document.createElement("i");
+      nextEntryBadge.dataset.entryBadge = "";
+      nextEntryBadge.textContent = "ENTRY";
+      card.appendChild(nextEntryBadge);
+    }
+    if (!registered && entryBadge) {
+      entryBadge.remove();
+    }
+
+    const awakenedBadge = card.querySelector<HTMLElement>("[data-awakened-badge]");
+    if (awakened && !awakenedBadge) {
+      const nextAwakenedBadge = document.createElement("em");
+      nextAwakenedBadge.className = "select-awakened-badge";
+      nextAwakenedBadge.dataset.awakenedBadge = "";
+      nextAwakenedBadge.textContent = "각성";
+      card.appendChild(nextAwakenedBadge);
+    }
+    if (!awakened && awakenedBadge) {
+      awakenedBadge.remove();
+    }
+  }
+
   function updateSelectView(playReveal = false) {
     if (mode !== "select") {
       return;
@@ -629,12 +706,13 @@ export function mountApp(root: HTMLElement, game: Phaser.Game): AppController {
     refs.stage.querySelectorAll<HTMLElement>(".select-card[data-fighter-id]").forEach((card) => {
       const fighterId = card.dataset.fighterId as CharacterId;
       const registered = entryIds.includes(fighterId);
+      const awakened = isAwakenedFighter(fighterId);
       const cardImage = card.querySelector<HTMLImageElement>("img");
       const cardTitle = card.querySelector<HTMLElement>("strong");
       const cardConcept = card.querySelector<HTMLElement>("small");
       card.classList.toggle("active", fighterId === selectedFighterId);
       card.classList.toggle("registered", registered);
-      card.classList.toggle("awakened", isAwakenedFighter(fighterId));
+      card.classList.toggle("awakened", awakened);
       if (cardImage) {
         cardImage.src = assetUrl(getEntryPortraitPath(fighterId));
         cardImage.alt = fighterDisplayLabel(fighterId);
@@ -645,15 +723,7 @@ export function mountApp(root: HTMLElement, game: Phaser.Game): AppController {
       if (cardConcept) {
         cardConcept.textContent = getFighterConcept(fighterId);
       }
-      const badge = card.querySelector("i");
-      if (registered && !badge) {
-        const entryBadge = document.createElement("i");
-        entryBadge.textContent = "ENTRY";
-        card.appendChild(entryBadge);
-      }
-      if (!registered && badge) {
-        badge.remove();
-      }
+      syncSelectCardBadges(card, registered, awakened);
     });
   }
 
@@ -898,17 +968,15 @@ export function mountApp(root: HTMLElement, game: Phaser.Game): AppController {
       }
 
       if (isAwakenedFighter(selectedFighterId)) {
-        const token = selectRevealToken + 1;
-        selectRevealToken = token;
-        if (selectRevealTimer) {
-          window.clearTimeout(selectRevealTimer);
-          selectRevealTimer = null;
-        }
         awakenedFighterIds.delete(selectedFighterId);
-        showSelectProfileWithTransition(selected, token, getBaseSelectProfile(selected));
+        playSelectCardFlipTransition(selected, getBaseSelectProfile(selected), "profile");
       } else {
+        const awakenedProfile = getAwakenedSelectProfile(selected);
+        if (!awakenedProfile) {
+          return;
+        }
         awakenedFighterIds.add(selectedFighterId);
-        playAwakenedSelectReveal(selected);
+        playSelectCardFlipTransition(selected, awakenedProfile, "final");
       }
       selectMediaFighterId = selectedFighterId;
       updateSelectView();
