@@ -17,10 +17,20 @@ export interface FighterView {
   animationTimer: Phaser.Time.TimerEvent | null;
   animationToken: number;
   slotGroup: Phaser.GameObjects.Container;
-  slotBox: Phaser.GameObjects.Rectangle;
+  slotFrame: Phaser.GameObjects.Image;
   slotResultText: Phaser.GameObjects.Text;
   reelIcons: [Phaser.GameObjects.Image, Phaser.GameObjects.Image, Phaser.GameObjects.Image];
 }
+
+export const SLOT_REEL_CENTER_Y = -123;
+export const SLOT_REEL_ICON_SIZE = 52;
+export const SLOT_REEL_ICON_SCALE = SLOT_REEL_ICON_SIZE / 220;
+
+const SLOT_FRAME_Y = -138;
+const SLOT_FRAME_WIDTH = 276;
+const SLOT_FRAME_SOURCE_WIDTH = 900;
+const SLOT_FRAME_SCALE = SLOT_FRAME_WIDTH / SLOT_FRAME_SOURCE_WIDTH;
+const SLOT_REEL_OFFSETS = [-69, 0, 69] as const;
 
 export function createFighterView(
   scene: Phaser.Scene,
@@ -52,28 +62,29 @@ export function createFighterView(
       strokeThickness: 4,
     })
     .setOrigin(0.5);
-  const slotBox = scene.add.rectangle(0, -128, 166, 58, 0x111827, 0.94).setStrokeStyle(3, fighter.palette.accent);
+  const slotFrameKey = facing === 1 ? "slot-frame-attack" : "slot-frame-defense";
+  const slotFrame = scene.add.image(0, SLOT_FRAME_Y, slotFrameKey).setScale(SLOT_FRAME_SCALE);
   const slotResultText = scene.add
-    .text(0, -176, "", {
+    .text(0, -246, "", {
       fontFamily: "sans-serif",
-      fontSize: "15px",
+      fontSize: "16px",
       color: "#fff7d6",
       stroke: "#000000",
       strokeThickness: 4,
       align: "center",
     })
     .setOrigin(0.5);
-  const reelBacks = [-52, 0, 52].map((offsetX) =>
-    scene.add.rectangle(offsetX, -128, 46, 46, 0x020617, 0.92).setStrokeStyle(1, 0x475569),
+  const reelBacks = SLOT_REEL_OFFSETS.map((offsetX) =>
+    scene.add.rectangle(offsetX, SLOT_REEL_CENTER_Y, 54, 70, 0x020617, 0.82).setStrokeStyle(1, 0x2c1b13),
   );
-  const reelIcons = [-52, 0, 52].map((offsetX) =>
-    scene.add.image(offsetX, -128, "slot-weak-attack").setDisplaySize(34, 34),
+  const reelIcons = SLOT_REEL_OFFSETS.map((offsetX) =>
+    scene.add.image(offsetX, SLOT_REEL_CENTER_Y, "slot-weak-attack").setScale(SLOT_REEL_ICON_SCALE),
   ) as [Phaser.GameObjects.Image, Phaser.GameObjects.Image, Phaser.GameObjects.Image];
   const slotGroup = scene.add.container(0, 0, [
-    slotResultText,
-    slotBox,
     ...reelBacks,
     ...reelIcons,
+    slotFrame,
+    slotResultText,
   ]);
   slotGroup.setVisible(false).setAlpha(0);
 
@@ -93,7 +104,7 @@ export function createFighterView(
     animationTimer: null,
     animationToken: 0,
     slotGroup,
-    slotBox,
+    slotFrame,
     slotResultText,
     reelIcons,
   };

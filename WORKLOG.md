@@ -116,6 +116,13 @@
 - 최신 기능 변경 커밋은 `5b533c6 Add more character sprite atlases`입니다.
 - 최신화 후 `npm test`와 `npm run build`를 실행해 둘 다 성공한 것을 확인했습니다.
 
+## 2026-05-20 전투 슬롯 릴 아트 교체
+
+- 첨부된 공격/방어 슬롯 프레임 PNG에서 체크보드 배경을 제거하고 `public/assets/slot-ui/`에 투명 PNG로 추가했습니다.
+- 슬롯 심볼 아틀라스를 2x3 기준으로 약공격, 강공격, 필살기, 회피, 방어, 반격 심볼로 분리해 `public/assets/slot-ui/symbols/`에 추가했습니다.
+- 전투 화면 슬롯 UI가 새 프레임과 심볼 이미지를 사용하도록 Phaser 자산 로딩과 릴 배치를 교체했습니다.
+- 현재 턴의 공격자에게는 공격 프레임, 방어자에게는 방어 프레임이 표시되도록 슬롯 프레임을 턴마다 갱신합니다.
+
 ## 최근 Git 히스토리
 
 - `5b533c6` Add more character sprite atlases

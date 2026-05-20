@@ -11,14 +11,16 @@ import {
 import { assetUrl } from "../../assets/paths";
 import { FIGHTERS } from "../../content/fighters";
 
-const SLOT_ICONS = [
-  ["slot-weak-attack", "/assets/slot-icons/weak-attack.svg"],
-  ["slot-strong-attack", "/assets/slot-icons/strong-attack.svg"],
-  ["slot-special", "/assets/slot-icons/special.svg"],
-  ["slot-dodge", "/assets/slot-icons/dodge.svg"],
-  ["slot-block", "/assets/slot-icons/block.svg"],
-  ["slot-counter", "/assets/slot-icons/counter.svg"],
-  ["slot-grand-counter", "/assets/slot-icons/grand-counter.svg"],
+const SLOT_ASSETS = [
+  ["slot-frame-attack", "/assets/slot-ui/attack-slot-frame.png"],
+  ["slot-frame-defense", "/assets/slot-ui/defense-slot-frame.png"],
+  ["slot-weak-attack", "/assets/slot-ui/symbols/weak-attack.png"],
+  ["slot-strong-attack", "/assets/slot-ui/symbols/strong-attack.png"],
+  ["slot-special", "/assets/slot-ui/symbols/special.png"],
+  ["slot-dodge", "/assets/slot-ui/symbols/dodge.png"],
+  ["slot-block", "/assets/slot-ui/symbols/block.png"],
+  ["slot-counter", "/assets/slot-ui/symbols/counter.png"],
+  ["slot-grand-counter", "/assets/slot-ui/symbols/grand-counter.png"],
 ] as const;
 
 const STAGES = [["stage-finance-center", "/assets/stages/finance-center.png"]] as const;
@@ -43,8 +45,8 @@ export class BootScene extends Phaser.Scene {
         }
       }
     }
-    for (const [key, path] of SLOT_ICONS) {
-      this.load.svg(key, assetUrl(path), { width: 64, height: 64 });
+    for (const [key, path] of SLOT_ASSETS) {
+      this.load.image(key, assetUrl(path));
     }
     for (const [key, path] of STAGES) {
       this.load.image(key, assetUrl(path));

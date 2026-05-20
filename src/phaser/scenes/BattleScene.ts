@@ -18,7 +18,12 @@ import type {
   DefenseReelSymbol,
   Fighter,
 } from "../../simulation/types";
-import { createFighterView, type FighterView } from "../view/fighterSprite";
+import {
+  SLOT_REEL_CENTER_Y,
+  SLOT_REEL_ICON_SCALE,
+  createFighterView,
+  type FighterView,
+} from "../view/fighterSprite";
 
 const ATTACK_ICON_KEYS: Record<AttackReelSymbol, string> = {
   WeakAttack: "slot-weak-attack",
@@ -383,6 +388,8 @@ export class BattleScene extends Phaser.Scene {
       const defenseCycle: DefenseReelSymbol[] = ["Block", "Dodge", "Counter", "RainbowReflect"];
       let ticks = 0;
 
+      attackerView.slotFrame.setTexture("slot-frame-attack");
+      defenderView.slotFrame.setTexture("slot-frame-defense");
       this.setSlotResult(attackerView, "공격 슬롯", "#fde68a", 0.72);
       this.setSlotResult(defenderView, "방어 슬롯", "#bfdbfe", 0.72);
 
@@ -450,36 +457,36 @@ export class BattleScene extends Phaser.Scene {
   }
 
   private rollReelIcon(icon: Phaser.GameObjects.Image, textureKey: string) {
-    const centerY = -128;
+    const centerY = SLOT_REEL_CENTER_Y;
     icon.setTexture(textureKey);
     icon.clearTint();
     icon.setAlpha(0.15);
-    icon.setY(centerY - 24);
-    icon.setScale(0.42);
+    icon.setY(centerY - 22);
+    icon.setScale(SLOT_REEL_ICON_SCALE * 0.86);
     this.tweens.killTweensOf(icon);
     this.tweens.add({
       targets: icon,
-      y: centerY + 18,
+      y: centerY + 12,
       alpha: 1,
-      scale: 0.54,
+      scale: SLOT_REEL_ICON_SCALE,
       duration: 70,
       ease: "Cubic.easeIn",
     });
   }
 
-  private stopReelIcon(icon: Phaser.GameObjects.Image, textureKey: string, tint: number, index: number) {
-    const centerY = -128;
+  private stopReelIcon(icon: Phaser.GameObjects.Image, textureKey: string, _tint: number, index: number) {
+    const centerY = SLOT_REEL_CENTER_Y;
     this.time.delayedCall(index * 58, () => {
       this.tweens.killTweensOf(icon);
       icon.setTexture(textureKey);
-      icon.setTint(tint);
+      icon.clearTint();
       icon.setAlpha(1);
-      icon.setY(centerY - 34);
-      icon.setScale(0.5);
+      icon.setY(centerY - 26);
+      icon.setScale(SLOT_REEL_ICON_SCALE * 0.92);
       this.tweens.add({
         targets: icon,
         y: centerY,
-        scale: 0.54,
+        scale: SLOT_REEL_ICON_SCALE,
         duration: 160,
         ease: "Back.easeOut",
       });
