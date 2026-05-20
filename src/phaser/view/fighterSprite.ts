@@ -22,15 +22,15 @@ export interface FighterView {
   reelIcons: [Phaser.GameObjects.Image, Phaser.GameObjects.Image, Phaser.GameObjects.Image];
 }
 
-export const SLOT_REEL_CENTER_Y = -123;
-export const SLOT_REEL_ICON_SIZE = 52;
+export const SLOT_REEL_CENTER_Y = -130.5;
+export const SLOT_REEL_ICON_SIZE = 26;
 export const SLOT_REEL_ICON_SCALE = SLOT_REEL_ICON_SIZE / 220;
 
 const SLOT_FRAME_Y = -138;
-const SLOT_FRAME_WIDTH = 276;
+const SLOT_FRAME_WIDTH = 138;
 const SLOT_FRAME_SOURCE_WIDTH = 900;
 const SLOT_FRAME_SCALE = SLOT_FRAME_WIDTH / SLOT_FRAME_SOURCE_WIDTH;
-const SLOT_REEL_OFFSETS = [-69, 0, 69] as const;
+const SLOT_REEL_OFFSETS = [-34.5, 0, 34.5] as const;
 
 export function createFighterView(
   scene: Phaser.Scene,
@@ -65,17 +65,17 @@ export function createFighterView(
   const slotFrameKey = facing === 1 ? "slot-frame-attack" : "slot-frame-defense";
   const slotFrame = scene.add.image(0, SLOT_FRAME_Y, slotFrameKey).setScale(SLOT_FRAME_SCALE);
   const slotResultText = scene.add
-    .text(0, -246, "", {
+    .text(0, -194, "", {
       fontFamily: "sans-serif",
-      fontSize: "16px",
+      fontSize: "12px",
       color: "#fff7d6",
       stroke: "#000000",
-      strokeThickness: 4,
+      strokeThickness: 3,
       align: "center",
     })
     .setOrigin(0.5);
   const reelBacks = SLOT_REEL_OFFSETS.map((offsetX) =>
-    scene.add.rectangle(offsetX, SLOT_REEL_CENTER_Y, 54, 70, 0x020617, 0.82).setStrokeStyle(1, 0x2c1b13),
+    scene.add.rectangle(offsetX, SLOT_REEL_CENTER_Y, 27, 35, 0x020617, 0.82).setStrokeStyle(1, 0x2c1b13),
   );
   const reelIcons = SLOT_REEL_OFFSETS.map((offsetX) =>
     scene.add.image(offsetX, SLOT_REEL_CENTER_Y, "slot-weak-attack").setScale(SLOT_REEL_ICON_SCALE),

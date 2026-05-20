@@ -461,12 +461,12 @@ export class BattleScene extends Phaser.Scene {
     icon.setTexture(textureKey);
     icon.clearTint();
     icon.setAlpha(0.15);
-    icon.setY(centerY - 22);
+    icon.setY(centerY - 11);
     icon.setScale(SLOT_REEL_ICON_SCALE * 0.86);
     this.tweens.killTweensOf(icon);
     this.tweens.add({
       targets: icon,
-      y: centerY + 12,
+      y: centerY + 6,
       alpha: 1,
       scale: SLOT_REEL_ICON_SCALE,
       duration: 70,
@@ -481,7 +481,7 @@ export class BattleScene extends Phaser.Scene {
       icon.setTexture(textureKey);
       icon.clearTint();
       icon.setAlpha(1);
-      icon.setY(centerY - 26);
+      icon.setY(centerY - 13);
       icon.setScale(SLOT_REEL_ICON_SCALE * 0.92);
       this.tweens.add({
         targets: icon,
