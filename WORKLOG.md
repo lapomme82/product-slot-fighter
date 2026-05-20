@@ -109,8 +109,20 @@
 - 캐릭터 선택 미디어 레이어의 위치/스케일 전환을 제거해 이미지 기준점이 미세하게 움직이지 않도록 수정했습니다.
 - 소개 영상 종료 후 최종 이미지로 넘어갈 때 영상 레이어는 opacity만 페이드아웃되고, 최종 이미지는 즉시 표시되는 흐름으로 정리했습니다.
 
+## 2026-05-20 오전 동기화
+
+- 원격 `origin/main`에서 밤사이 작업된 커밋 3개를 현재 PC에 fast-forward로 반영했습니다.
+- 새 작업은 전투 인트로/종료 흐름 개선, 스프라이트 아틀라스 기반 전투 애니메이션 추가, 일부 캐릭터/각성 캐릭터 스프라이트 아틀라스 추가입니다.
+- 최신 기능 변경 커밋은 `5b533c6 Add more character sprite atlases`입니다.
+- 최신화 후 `npm test`와 `npm run build`를 실행해 둘 다 성공한 것을 확인했습니다.
+
 ## 최근 Git 히스토리
 
+- `5b533c6` Add more character sprite atlases
+- `09c1660` Refine battle intro and finish flow
+- `256febb` Add sprite atlas battle animations
+- `926352d` Remove select media slide motion
+- `2c644e2` Update handoff work history
 - `e3cb6a3` Refine character select reveal flow
 - `bf55dc6` Hide pause button outside battles
 - `b8d378c` Hide home button on title screen
@@ -118,11 +130,6 @@
 - `927fce6` Replace title button image
 - `8c9f98f` Trim transparent title button asset
 - `4c5d3a5` Use image asset for title button
-- `be04edf` Restyle title tournament button
-- `20c5bfd` Remove top header title text
-- `3a7956c` Remove title description text
-- `6223356` Remove title eyebrow text
-- `0194746` Add title logo to title screen
 
 ## 로컬 간 작업 규칙
 
