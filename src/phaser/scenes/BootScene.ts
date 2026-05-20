@@ -20,7 +20,6 @@ const SLOT_ASSETS = [
   ["slot-dodge", "/assets/slot-ui/symbols/dodge.png"],
   ["slot-block", "/assets/slot-ui/symbols/block.png"],
   ["slot-counter", "/assets/slot-ui/symbols/counter.png"],
-  ["slot-grand-counter", "/assets/slot-ui/symbols/grand-counter.png"],
 ] as const;
 
 const STAGES = [["stage-finance-center", "/assets/stages/finance-center.png"]] as const;

@@ -21,11 +21,10 @@ export const BASE_DEFENSE_OUTCOME_WEIGHTS: WeightedEntry<DefenseAction>[] = [
   { value: "Dodge", weight: 25 },
   { value: "Counter", weight: 20 },
   { value: "DefenseFail", weight: 15 },
-  { value: "RainbowReflect", weight: 5 },
 ];
 
 const ATTACK_SYMBOLS: AttackReelSymbol[] = ["WeakAttack", "StrongAttack", "Special"];
-const DEFENSE_SYMBOLS: DefenseReelSymbol[] = ["Block", "Dodge", "Counter", "RainbowReflect"];
+const DEFENSE_SYMBOLS: DefenseReelSymbol[] = ["Block", "Dodge", "Counter"];
 
 function applyBias<T extends string>(
   baseWeights: WeightedEntry<T>[],

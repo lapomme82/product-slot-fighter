@@ -227,8 +227,5 @@ export function motionForDefense(action: DefenseAction): CharacterMotion | null 
   if (action === "Counter") {
     return "counter";
   }
-  if (action === "RainbowReflect") {
-    return "grandCounter";
-  }
   return null;
 }

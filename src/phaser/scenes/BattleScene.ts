@@ -35,7 +35,6 @@ const DEFENSE_ICON_KEYS: Record<DefenseReelSymbol, string> = {
   Block: "slot-block",
   Dodge: "slot-dodge",
   Counter: "slot-counter",
-  RainbowReflect: "slot-grand-counter",
 };
 
 const ATTACK_LABELS = {
@@ -50,7 +49,6 @@ const DEFENSE_LABELS = {
   Dodge: "회피",
   Counter: "반격",
   DefenseFail: "방어 꽝",
-  RainbowReflect: "대반격",
 } as const;
 
 interface HudView {
@@ -385,7 +383,7 @@ export class BattleScene extends Phaser.Scene {
 
     return new Promise((resolve) => {
       const attackCycle: AttackReelSymbol[] = ["WeakAttack", "StrongAttack", "Special"];
-      const defenseCycle: DefenseReelSymbol[] = ["Block", "Dodge", "Counter", "RainbowReflect"];
+      const defenseCycle: DefenseReelSymbol[] = ["Block", "Dodge", "Counter"];
       let ticks = 0;
 
       attackerView.slotFrame.setTexture("slot-frame-attack");

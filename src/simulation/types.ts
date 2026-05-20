@@ -10,7 +10,7 @@ export type CharacterId =
   | "emuji";
 
 export type AttackAction = "WeakAttack" | "StrongAttack" | "AttackFail" | "Special";
-export type DefenseAction = "Block" | "Dodge" | "Counter" | "DefenseFail" | "RainbowReflect";
+export type DefenseAction = "Block" | "Dodge" | "Counter" | "DefenseFail";
 export type AttackReelSymbol = Exclude<AttackAction, "AttackFail">;
 export type DefenseReelSymbol = Exclude<DefenseAction, "DefenseFail">;
 export type SlotAction = AttackAction | DefenseAction;

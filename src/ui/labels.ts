@@ -12,7 +12,6 @@ export const DEFENSE_LABELS: Record<DefenseAction, string> = {
   Dodge: "회피",
   Counter: "반격",
   DefenseFail: "방어 꽝",
-  RainbowReflect: "대반격",
 };
 
 export const ROUND_LABELS: Record<RoundName, string> = {

@@ -3,7 +3,7 @@ import { resolveDamage } from "./combat";
 
 describe("combat resolution", () => {
   it("does nothing when the attack reels do not match", () => {
-    expect(resolveDamage("thunder-discipline", "AttackFail", "RainbowReflect")).toMatchObject({
+    expect(resolveDamage("thunder-discipline", "AttackFail", "Counter")).toMatchObject({
       targetDamage: 0,
       reflectedDamage: 0,
     });
@@ -29,10 +29,4 @@ describe("combat resolution", () => {
     expect(resolveDamage("abacus-ghost", "Special", "Counter").targetDamage).toBe(44);
   });
 
-  it("rainbow reflects every attack at 1.5x damage", () => {
-    expect(resolveDamage("golden-soul-maiden", "Special", "RainbowReflect")).toMatchObject({
-      targetDamage: 0,
-      reflectedDamage: 75,
-    });
-  });
 });

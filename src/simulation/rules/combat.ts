@@ -85,12 +85,6 @@ export function resolveDamage(
         reflectedDamage: rawDamage,
         summary: "반격 성공. 공격 피해를 그대로 되돌렸다.",
       };
-    case "RainbowReflect":
-      return {
-        targetDamage: 0,
-        reflectedDamage: Math.ceil(rawDamage * 1.5),
-        summary: "무지개 반사. 공격 피해가 1.5배로 되돌아갔다.",
-      };
   }
 }
 

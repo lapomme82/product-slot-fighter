@@ -17,7 +17,6 @@ describe("slot reels", () => {
     expect(resolveDefenseReels(["Block", "Block", "Block"])).toBe("Block");
     expect(resolveDefenseReels(["Dodge", "Dodge", "Dodge"])).toBe("Dodge");
     expect(resolveDefenseReels(["Counter", "Counter", "Counter"])).toBe("Counter");
-    expect(resolveDefenseReels(["RainbowReflect", "RainbowReflect", "RainbowReflect"])).toBe("RainbowReflect");
   });
 
   it("resolves a non-matching defense reel into defense fail", () => {
@@ -35,7 +34,6 @@ describe("slot reels", () => {
     let attackFails = 0;
     let defenseFails = 0;
     let specials = 0;
-    let rainbowReflects = 0;
 
     for (let index = 0; index < 10000; index += 1) {
       const attack = resolveAttackReels(rollAttackReels("thunder-discipline", attackRng));
@@ -49,9 +47,6 @@ describe("slot reels", () => {
       if (defense === "DefenseFail") {
         defenseFails += 1;
       }
-      if (defense === "RainbowReflect") {
-        rainbowReflects += 1;
-      }
     }
 
     expect(attackFails).toBeGreaterThan(1100);
@@ -60,7 +55,5 @@ describe("slot reels", () => {
     expect(defenseFails).toBeLessThan(1900);
     expect(specials).toBeGreaterThan(300);
     expect(specials).toBeLessThan(800);
-    expect(rainbowReflects).toBeGreaterThan(300);
-    expect(rainbowReflects).toBeLessThan(800);
   });
 });
