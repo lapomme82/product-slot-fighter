@@ -9,7 +9,6 @@ export const CHARACTER_MOTIONS = [
   "dodge",
   "counter",
   "hurt",
-  "grandCounter",
 ] as const;
 
 export type CharacterMotion = (typeof CHARACTER_MOTIONS)[number];
@@ -143,7 +142,6 @@ const ATLAS_ANIMATION_BY_MOTION: Record<CharacterMotion, string> = {
   dodge: "dodge",
   counter: "counter",
   hurt: "hit",
-  grandCounter: "counter",
 };
 
 export function getAnimationFrameKey(

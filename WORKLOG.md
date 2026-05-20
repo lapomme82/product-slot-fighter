@@ -143,6 +143,12 @@
 - 양쪽 PC에서 진행한 작업 내역과 현재 코드 기준 사양을 바탕으로 `docs/reverse-planning.md` 역기획서를 추가했습니다.
 - 타이틀, 캐릭터 선택, 각성, 토너먼트, 전투 슬롯, 자산 구조, 검증/배포 흐름, 향후 정리 후보를 문서화했습니다.
 
+## 2026-05-20 레거시 자산 삭제
+
+- 새 슬롯 UI에서 사용하지 않는 `public/assets/slot-icons/` SVG 아이콘 세트를 삭제했습니다.
+- 대반격 제거 이후 직접 호출되지 않던 `grandCounter` 모션 정의와 `public/assets/sprites/*/grandCounter/` 프레임 폴더를 삭제했습니다.
+- 역기획서의 레거시 후보 항목을 삭제 완료 상태로 갱신했습니다.
+
 ## 최근 Git 히스토리
 
 - `5b533c6` Add more character sprite atlases

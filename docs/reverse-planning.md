@@ -238,9 +238,8 @@
 - dodge
 - counter
 - hurt
-- grandCounter
 
-현재 전투 룰에서는 `grandCounter`가 직접 호출되지 않는다. 대반격 삭제 이후 남아 있는 `grandCounter` 프레임/모션 자산은 레거시 정리 후보로 볼 수 있다.
+대반격 삭제 이후 `grandCounter` 모션은 코드와 프레임 자산에서 제거되었다.
 
 애니메이션 시스템:
 
@@ -279,7 +278,6 @@
 - `public/assets/sprites/`: 프레임 단위 캐릭터 모션
 - `public/assets/sprite-atlases/`: 일부 캐릭터의 atlas 기반 모션
 - `public/assets/slot-ui/`: 새 슬롯 프레임과 심볼
-- `public/assets/slot-icons/`: 과거 SVG 슬롯 아이콘, 현재 전투 슬롯 UI에서는 사용하지 않는 레거시 후보
 
 ## 11. 주요 코드 구조
 
@@ -360,10 +358,9 @@
 - GitHub Pages 배포: 성공
 - 삭제된 `grand-counter.png`: 배포 URL 404 확인
 
-## 14. 현재 알려진 레거시/정리 후보
+## 14. 현재 알려진 정리 후보
 
-- `public/assets/slot-icons/`의 SVG 슬롯 아이콘은 새 슬롯 UI에서 더 이상 사용하지 않는다.
-- `public/assets/sprites/*/grandCounter/` 프레임과 `CHARACTER_MOTIONS`의 `grandCounter`는 대반격 삭제 후 직접 호출되지 않는 상태다.
+- 미사용 `slot-icons` SVG 아이콘과 `grandCounter` 프레임/모션은 삭제되었다.
 - README에는 초기 설명이 남아 있어 현재 9명 엔트리/각성/새 슬롯 UI 기준으로 갱신할 필요가 있다.
 - 일부 문서/터미널 출력에서 한글 인코딩이 깨져 보이는 환경이 있다. 실제 파일은 UTF-8 기준으로 관리하는 것이 좋다.
 
@@ -372,7 +369,6 @@
 우선순위가 높은 작업:
 
 - README를 최신 역기획서 기준으로 갱신
-- 미사용 `slot-icons`와 `grandCounter` 모션 자산 정리 여부 결정
 - 캐릭터별 각성 atlas 적용 범위 확대
 - 캐릭터 선택 화면에서 영상 로딩 실패 시 대체 UI를 더 명확히 처리
 - GitHub Actions의 Node.js 20 deprecation 경고 대응
