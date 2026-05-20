@@ -1,4 +1,4 @@
-import { BASE_FIGHTERS } from "../../content/fighters";
+import { SELECTABLE_FIGHTERS, isFighterGloballyBanned } from "../../content/fighters";
 import { createRng, shuffle } from "../rng";
 import { simulateBattle } from "./battle";
 import type {
@@ -51,9 +51,9 @@ function getOpeningRound(bracketSize: number): RoundName {
   return "Quarterfinal";
 }
 
-export function createTournament(seed: string, fighterIds: CharacterId[] = BASE_FIGHTERS.map((fighter) => fighter.id)): TournamentState {
+export function createTournament(seed: string, fighterIds: CharacterId[] = SELECTABLE_FIGHTERS.map((fighter) => fighter.id)): TournamentState {
   const rng = createRng(seed);
-  const uniqueFighterIds = [...new Set(fighterIds)];
+  const uniqueFighterIds = [...new Set(fighterIds)].filter((fighterId) => !isFighterGloballyBanned(fighterId));
   const bracketSize = getBracketSize(uniqueFighterIds.length);
   const shuffled = shuffle(uniqueFighterIds, rng);
   const byeCount = bracketSize - shuffled.length;

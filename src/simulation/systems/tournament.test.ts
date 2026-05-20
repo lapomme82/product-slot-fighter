@@ -7,15 +7,16 @@ describe("tournament system", () => {
     expect(createTournament("plum-rain")).toEqual(createTournament("plum-rain"));
   });
 
-  it("places the full nine-fighter roster into sixteen slots with seven byes", () => {
+  it("places the playable eight-fighter roster into eight slots without banned fighters", () => {
     const tournament = createTournament("all-fighters");
     const fighters = tournament.slots.filter((slot) => slot.fighterId);
     const byes = tournament.slots.filter((slot) => slot.isBye);
 
-    expect(tournament.slots).toHaveLength(16);
-    expect(tournament.matches[0].round).toBe("RoundOf16");
-    expect(fighters).toHaveLength(9);
-    expect(byes).toHaveLength(7);
+    expect(tournament.slots).toHaveLength(8);
+    expect(tournament.matches[0].round).toBe("Quarterfinal");
+    expect(fighters).toHaveLength(8);
+    expect(fighters.every((slot) => slot.fighterId !== "glass-heart")).toBe(true);
+    expect(byes).toHaveLength(0);
   });
 
   it("plays from first round to a single champion", () => {
@@ -24,7 +25,7 @@ describe("tournament system", () => {
     expect(replay.champion).toBeTruthy();
     expect(replay.matches.filter((match) => match.round === "Final")).toHaveLength(1);
     expect(replay.matches.every((match) => match.winner)).toBe(true);
-    expect(replay.battles).toHaveLength(8);
+    expect(replay.battles).toHaveLength(7);
   });
 
   it("creates a two-fighter entry tournament as a final match", () => {
@@ -39,7 +40,7 @@ describe("tournament system", () => {
     expect(selected).toContain(replay.champion);
   });
 
-  it("pads a five-fighter entry tournament into an eight-slot bracket", () => {
+  it("filters globally banned fighters from selected entry tournaments", () => {
     const selected: CharacterId[] = [
       "thunder-discipline",
       "seahorse-overlord",
@@ -51,9 +52,10 @@ describe("tournament system", () => {
     const fighters = tournament.slots.flatMap((slot) => (slot.fighterId ? [slot.fighterId] : []));
     const byes = tournament.slots.filter((slot) => slot.isBye);
 
-    expect(tournament.slots).toHaveLength(8);
-    expect(fighters).toHaveLength(5);
-    expect(byes).toHaveLength(3);
+    expect(tournament.slots).toHaveLength(4);
+    expect(fighters).toHaveLength(4);
+    expect(fighters).not.toContain("glass-heart");
+    expect(byes).toHaveLength(0);
     expect(fighters.every((fighterId) => selected.includes(fighterId))).toBe(true);
   });
 });

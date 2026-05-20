@@ -222,6 +222,7 @@ export const FIGHTERS: Fighter[] = [
     name: "김태우",
     title: "유리심장",
     concept: "깨질 듯 투명한 내공으로 충격을 흘려내는 수비가",
+    selectionStatus: "GlobalBan",
     maxHp: 112,
     weakDamage: 10,
     strongDamage: 22,
@@ -247,7 +248,13 @@ export const FIGHTERS: Fighter[] = [
 ];
 
 export const BASE_FIGHTERS = FIGHTERS;
+export const SELECTABLE_FIGHTERS = FIGHTERS.filter((fighter) => fighter.selectionStatus !== "GlobalBan");
 
 export const FIGHTER_BY_ID = Object.fromEntries(FIGHTERS.map((fighter) => [fighter.id, fighter])) as {
   [Key in Fighter["id"]]: Fighter;
 };
+
+export function isFighterGloballyBanned(fighter: Fighter | Fighter["id"]) {
+  const target = typeof fighter === "string" ? FIGHTER_BY_ID[fighter] : fighter;
+  return target.selectionStatus === "GlobalBan";
+}

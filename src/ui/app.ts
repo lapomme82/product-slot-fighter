@@ -1,6 +1,6 @@
 import type Phaser from "phaser";
 import { assetUrl } from "../assets/paths";
-import { BASE_FIGHTERS, FIGHTER_BY_ID } from "../content/fighters";
+import { BASE_FIGHTERS, FIGHTER_BY_ID, SELECTABLE_FIGHTERS, isFighterGloballyBanned } from "../content/fighters";
 import { createTournament, simulateTournamentFromState } from "../simulation/systems/tournament";
 import type {
   BattleLogEntry,
@@ -229,6 +229,15 @@ export function mountApp(root: HTMLElement, game: Phaser.Game): AppController {
 
   function renderSelect() {
     setMode("select");
+    entryIds = entryIds.filter((fighterId) => !isFighterGloballyBanned(fighterId));
+    for (const fighterId of [...awakenedFighterIds]) {
+      if (isFighterGloballyBanned(fighterId)) {
+        awakenedFighterIds.delete(fighterId);
+      }
+    }
+    if (isFighterGloballyBanned(selectedFighterId)) {
+      selectedFighterId = SELECTABLE_FIGHTERS[0].id;
+    }
     for (const fighter of BASE_FIGHTERS) {
       preloadImage(assetUrl(fighter.portraitPath));
       preloadImage(assetUrl(fighter.portraitThumbPath));
@@ -244,6 +253,7 @@ export function mountApp(root: HTMLElement, game: Phaser.Game): AppController {
     const selectedProfile = getActiveSelectProfile(selected);
     const isRegistered = entryIds.includes(selectedFighterId);
     const isAwakened = awakenedFighterIds.has(selectedFighterId);
+    const isSelectedBanned = isFighterGloballyBanned(selected);
     const canStart = entryIds.length >= 2;
     const primaryFighters = BASE_FIGHTERS.filter((fighter) => !SPECIAL_SELECT_FIGHTER_IDS.has(fighter.id));
     const specialFighters = BASE_FIGHTERS.filter((fighter) => SPECIAL_SELECT_FIGHTER_IDS.has(fighter.id));
@@ -251,13 +261,15 @@ export function mountApp(root: HTMLElement, game: Phaser.Game): AppController {
       const active = fighter.id === selectedFighterId;
       const registered = entryIds.includes(fighter.id);
       const awakened = isAwakenedFighter(fighter.id);
+      const banned = isFighterGloballyBanned(fighter);
       return `
-        <button class="select-card ${active ? "active" : ""} ${registered ? "registered" : ""} ${awakened ? "awakened" : ""}" data-action="select-fighter" data-fighter-id="${fighter.id}">
+        <button class="select-card ${active ? "active" : ""} ${registered ? "registered" : ""} ${awakened ? "awakened" : ""} ${banned ? "banned" : ""}" data-action="select-fighter" data-fighter-id="${fighter.id}" ${banned ? "disabled" : ""}>
           <img src="${assetUrl(getEntryPortraitPath(fighter.id))}" alt="${fighterDisplayLabel(fighter.id)}" />
           <span>
             <strong>${fighterDisplayLabel(fighter.id)}</strong>
             <small>${getFighterConcept(fighter.id)}</small>
           </span>
+          ${banned ? '<em class="select-ban-badge">GLOBAL BAN</em>' : ""}
           ${awakened ? '<em class="select-awakened-badge" data-awakened-badge>각성</em>' : ""}
           ${registered ? '<i data-entry-badge>ENTRY</i>' : ""}
         </button>
@@ -271,7 +283,7 @@ export function mountApp(root: HTMLElement, game: Phaser.Game): AppController {
             <p class="eyebrow">Character Select</p>
             <h2>출전 엔트리 구성</h2>
           </div>
-          <strong data-select-count>${entryIds.length} / ${BASE_FIGHTERS.length}</strong>
+          <strong data-select-count>${entryIds.length} / ${SELECTABLE_FIGHTERS.length}</strong>
         </div>
         <div class="select-layout">
           <aside class="profile-panel select-profile" data-select-profile-panel>
@@ -286,10 +298,10 @@ export function mountApp(root: HTMLElement, game: Phaser.Game): AppController {
               <span data-select-profile-concept>${selectedProfile.concept}</span>
             </div>
             <div class="select-profile-actions">
-              <button class="awaken-select-button ${isAwakened ? "active" : ""}" data-action="toggle-awaken" data-select-awaken ${selected.awakened ? "" : "disabled"}>
+              <button class="awaken-select-button ${isAwakened ? "active" : ""}" data-action="toggle-awaken" data-select-awaken ${selected.awakened && !isSelectedBanned ? "" : "disabled"}>
                 ${isAwakened ? "각성 선택됨" : "각성 캐릭터 선택"}
               </button>
-              <button data-action="register-entry" data-select-register ${isRegistered ? "disabled" : ""}>${isRegistered ? "등록 완료" : isAwakened ? "각성 엔트리 등록" : "엔트리 등록"}</button>
+              <button data-action="register-entry" data-select-register ${isRegistered || isSelectedBanned ? "disabled" : ""}>${isSelectedBanned ? "GLOBAL BAN" : isRegistered ? "등록 완료" : isAwakened ? "각성 엔트리 등록" : "엔트리 등록"}</button>
             </div>
           </aside>
           <section class="fighter-pool">
@@ -651,7 +663,7 @@ export function mountApp(root: HTMLElement, game: Phaser.Game): AppController {
       .join("");
   }
 
-  function syncSelectCardBadges(card: HTMLElement, registered: boolean, awakened: boolean) {
+  function syncSelectCardBadges(card: HTMLElement, registered: boolean, awakened: boolean, banned: boolean) {
     const entryBadge = card.querySelector<HTMLElement>("[data-entry-badge]");
     if (registered && !entryBadge) {
       const nextEntryBadge = document.createElement("i");
@@ -674,6 +686,17 @@ export function mountApp(root: HTMLElement, game: Phaser.Game): AppController {
     if (!awakened && awakenedBadge) {
       awakenedBadge.remove();
     }
+
+    const banBadge = card.querySelector<HTMLElement>(".select-ban-badge");
+    if (banned && !banBadge) {
+      const nextBanBadge = document.createElement("em");
+      nextBanBadge.className = "select-ban-badge";
+      nextBanBadge.textContent = "GLOBAL BAN";
+      card.appendChild(nextBanBadge);
+    }
+    if (!banned && banBadge) {
+      banBadge.remove();
+    }
   }
 
   function updateSelectView(playReveal = false) {
@@ -684,6 +707,7 @@ export function mountApp(root: HTMLElement, game: Phaser.Game): AppController {
     const selected = FIGHTER_BY_ID[selectedFighterId];
     const isRegistered = entryIds.includes(selectedFighterId);
     const isAwakened = isAwakenedFighter(selectedFighterId);
+    const isSelectedBanned = isFighterGloballyBanned(selected);
     const selectedProfile = getActiveSelectProfile(selected);
     const canStart = entryIds.length >= 2;
     if (playReveal) {
@@ -714,16 +738,16 @@ export function mountApp(root: HTMLElement, game: Phaser.Game): AppController {
       concept.textContent = selectedProfile.concept;
     }
     if (count) {
-      count.textContent = `${entryIds.length} / ${BASE_FIGHTERS.length}`;
+      count.textContent = `${entryIds.length} / ${SELECTABLE_FIGHTERS.length}`;
     }
     if (awakenButton) {
-      awakenButton.disabled = !selected.awakened;
+      awakenButton.disabled = !selected.awakened || isSelectedBanned;
       awakenButton.classList.toggle("active", isAwakened);
       awakenButton.textContent = isAwakened ? "각성 선택됨" : "각성 캐릭터 선택";
     }
     if (registerButton) {
-      registerButton.disabled = isRegistered;
-      registerButton.textContent = isRegistered ? "등록 완료" : isAwakened ? "각성 엔트리 등록" : "엔트리 등록";
+      registerButton.disabled = isRegistered || isSelectedBanned;
+      registerButton.textContent = isSelectedBanned ? "GLOBAL BAN" : isRegistered ? "등록 완료" : isAwakened ? "각성 엔트리 등록" : "엔트리 등록";
     }
     if (startButton) {
       startButton.disabled = !canStart;
@@ -736,12 +760,17 @@ export function mountApp(root: HTMLElement, game: Phaser.Game): AppController {
       const fighterId = card.dataset.fighterId as CharacterId;
       const registered = entryIds.includes(fighterId);
       const awakened = isAwakenedFighter(fighterId);
+      const banned = isFighterGloballyBanned(fighterId);
       const cardImage = card.querySelector<HTMLImageElement>("img");
       const cardTitle = card.querySelector<HTMLElement>("strong");
       const cardConcept = card.querySelector<HTMLElement>("small");
       card.classList.toggle("active", fighterId === selectedFighterId);
       card.classList.toggle("registered", registered);
       card.classList.toggle("awakened", awakened);
+      card.classList.toggle("banned", banned);
+      if (card instanceof HTMLButtonElement) {
+        card.disabled = banned;
+      }
       if (cardImage) {
         cardImage.src = assetUrl(getEntryPortraitPath(fighterId));
         cardImage.alt = fighterDisplayLabel(fighterId);
@@ -752,7 +781,7 @@ export function mountApp(root: HTMLElement, game: Phaser.Game): AppController {
       if (cardConcept) {
         cardConcept.textContent = getFighterConcept(fighterId);
       }
-      syncSelectCardBadges(card, registered, awakened);
+      syncSelectCardBadges(card, registered, awakened, banned);
     });
   }
 
@@ -895,13 +924,15 @@ export function mountApp(root: HTMLElement, game: Phaser.Game): AppController {
   }
 
   function startEntryTournament() {
-    if (entryIds.length < 2) {
+    const playableEntryIds = entryIds.filter((fighterId) => !isFighterGloballyBanned(fighterId));
+    if (playableEntryIds.length < 2) {
       return;
     }
 
     resetTournament();
+    entryIds = playableEntryIds;
     currentSeed = makeSeed();
-    tournament = createTournament(currentSeed, entryIds);
+    tournament = createTournament(currentSeed, playableEntryIds);
     replay = simulateTournamentFromState(currentSeed, tournament);
     game.registry.set("awakenedFighterIds", [...awakenedFighterIds]);
     completedMatchIds = new Set(replay.matches.filter(isByeMatch).map((match) => match.id));
@@ -985,6 +1016,9 @@ export function mountApp(root: HTMLElement, game: Phaser.Game): AppController {
     }
 
     if (action === "select-fighter" && fighterId) {
+      if (isFighterGloballyBanned(fighterId)) {
+        return;
+      }
       selectedFighterId = fighterId;
       updateSelectView(true);
       return;
@@ -992,7 +1026,7 @@ export function mountApp(root: HTMLElement, game: Phaser.Game): AppController {
 
     if (action === "toggle-awaken") {
       const selected = FIGHTER_BY_ID[selectedFighterId];
-      if (!selected.awakened) {
+      if (!selected.awakened || isFighterGloballyBanned(selected)) {
         return;
       }
 
@@ -1014,6 +1048,9 @@ export function mountApp(root: HTMLElement, game: Phaser.Game): AppController {
     }
 
     if (action === "register-entry") {
+      if (isFighterGloballyBanned(selectedFighterId)) {
+        return;
+      }
       if (!entryIds.includes(selectedFighterId)) {
         entryIds = [...entryIds, selectedFighterId];
       }

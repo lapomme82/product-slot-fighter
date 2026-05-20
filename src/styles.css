@@ -352,6 +352,24 @@ h2 {
   box-shadow: 0 0 0 2px rgba(192, 132, 252, 0.18), 0 16px 36px rgba(0, 0, 0, 0.32);
 }
 
+.select-card:disabled {
+  cursor: not-allowed;
+}
+
+.select-card.banned,
+.select-card.banned:hover,
+.select-card.banned.active {
+  border-color: #4b5563;
+  background: linear-gradient(180deg, rgba(21, 21, 24, 0.94), rgba(8, 8, 10, 0.98));
+  box-shadow: none;
+  opacity: 0.46;
+  filter: grayscale(0.85) saturate(0.55) brightness(0.72);
+}
+
+.select-card.banned img {
+  border-color: #52525b;
+}
+
 .select-card.registered {
   border-color: #facc15;
 }
@@ -412,6 +430,21 @@ h2 {
   font-size: 10px;
   font-style: normal;
   font-weight: 900;
+}
+
+.select-ban-badge {
+  position: absolute;
+  right: 8px;
+  bottom: 8px;
+  border: 1px solid rgba(248, 113, 113, 0.8);
+  background: rgba(69, 10, 10, 0.86);
+  border-radius: 999px;
+  padding: 3px 7px;
+  color: #fecaca;
+  font-size: 10px;
+  font-style: normal;
+  font-weight: 900;
+  letter-spacing: 0;
 }
 
 .profile-panel,

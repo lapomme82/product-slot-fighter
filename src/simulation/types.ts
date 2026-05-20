@@ -23,6 +23,7 @@ export interface Fighter {
   name: string;
   title: string;
   concept: string;
+  selectionStatus?: "GlobalBan";
   maxHp: number;
   weakDamage: number;
   strongDamage: number;
