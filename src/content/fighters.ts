@@ -182,7 +182,7 @@ export const FIGHTERS: Fighter[] = [
     selectFinalPortraitPath: "/assets/select-reveals/longing-soul-final.png",
     awakened: {
       name: "장정인",
-      title: "혼례무희",
+      title: "취운술사",
       concept: "백년가약의 춤으로 인연의 칼날을 휘두른다",
       portraitPath: "/assets/awakened-select/longing-soul-base.png",
       introVideoPath: "/assets/awakened-select/longing-soul-intro.mp4",
