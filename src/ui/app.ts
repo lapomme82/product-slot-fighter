@@ -45,6 +45,7 @@ const SPECIAL_SELECT_FIGHTER_IDS = new Set<CharacterId>(["truth-tracker", "glass
 const TITLE_BACKGROUND_PATH = "/assets/stages/title-office-battle.png";
 const TITLE_LOGO_PATH = "/assets/ui/title-logo.png";
 const TITLE_BUTTON_PATH = "/assets/ui/title-tournament-button.png";
+const UI_BACKDROP_PATH = "/assets/ui/wuxia-ui-backdrop.png";
 const SELECT_PROFILE_HOLD_MS = 2000;
 const SELECT_PROFILE_SWITCH_OUT_MS = 300;
 const SELECT_PROFILE_ENTER_MS = 460;
@@ -126,6 +127,10 @@ export function mountApp(root: HTMLElement, game: Phaser.Game): AppController {
     logPanel: root.querySelector("#battle-log-panel") as HTMLElement,
     log: root.querySelector("#log") as HTMLElement,
   };
+
+  const shell = root.querySelector(".shell") as HTMLElement;
+  shell.style.setProperty("--wuxia-ui-backdrop", `url("${assetUrl(UI_BACKDROP_PATH)}")`);
+  preloadImage(assetUrl(UI_BACKDROP_PATH));
 
   refs.gameRoot.appendChild(game.canvas);
 

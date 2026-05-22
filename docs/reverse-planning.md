@@ -271,7 +271,7 @@
 주요 자산 디렉터리:
 
 - `public/assets/stages/`: 타이틀/전투 배경
-- `public/assets/ui/`: 타이틀 로고와 타이틀 CTA 버튼
+- `public/assets/ui/`: 타이틀 로고, 타이틀 CTA 버튼, 공통 UI 배경 질감
 - `public/assets/portraits/`: 캐릭터 기본 포트레이트 및 썸네일
 - `public/assets/select-reveals/`: 일반 캐릭터 선택 소개 영상/최종 이미지
 - `public/assets/awakened-select/`: 각성 캐릭터 기본 이미지/소개 영상/최종 이미지
@@ -339,6 +339,13 @@
 - 공격자/방어자별 프레임을 턴마다 갱신하도록 했다.
 - 슬롯 표시 크기를 조정했다.
 - 방어 슬롯에서 대반격을 제거했다.
+
+### 2026-05-22 전체 UI 톤앤매너 개선
+
+- GPT 이미지 툴로 픽셀아트 무협 대전 UI 배경 질감 `public/assets/ui/wuxia-ui-backdrop.png`를 생성했다.
+- 선택 화면, 대진표, 판정 로그, 공통 버튼을 먹선/적색 목재/금색 테두리/청록 그림자 포인트 기준으로 재정리했다.
+- Phaser 전투 HUD의 HP 바, VS 장식, 초상화 프레임, 슬롯 결과 텍스트 톤을 DOM UI와 맞췄다.
+- 전투 캔버스는 16:9 중앙 정렬로 조정해 넓은 화면에서 빈 검정 영역이 생기지 않도록 했다.
 
 ## 13. 검증 현황
 

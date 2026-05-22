@@ -149,6 +149,14 @@
 - 대반격 제거 이후 직접 호출되지 않던 `grandCounter` 모션 정의와 `public/assets/sprites/*/grandCounter/` 프레임 폴더를 삭제했습니다.
 - 역기획서의 레거시 후보 항목을 삭제 완료 상태로 갱신했습니다.
 
+## 2026-05-22 전체 UI 톤앤매너 개선
+
+- GPT 이미지 툴로 픽셀아트 무협 대전 UI용 배경 질감 `public/assets/ui/wuxia-ui-backdrop.png`를 생성해 선택/대진표/전투 외곽 UI에 적용했습니다.
+- 캐릭터 선택 카드, 프로필 패널, 엔트리 패널, 대진표 셀, 판정 로그, 공통 버튼을 먹선/적색 목재/금색 테두리/청록 그림자 포인트 기준으로 재디자인했습니다.
+- Phaser 전투 화면의 상단 HUD, HP 바, VS 장식, 초상화 프레임, 슬롯 결과 텍스트 톤을 DOM UI와 맞췄습니다.
+- 전투 캔버스가 넓은 화면에서 오른쪽 빈 영역을 만들지 않도록 16:9 중앙 정렬 레이아웃으로 조정했습니다.
+- 검증: `npm test` 통과, `npm run build` 통과, Chrome headless 스크린샷으로 타이틀/선택/대진표/전투/모바일 선택 화면을 확인했습니다.
+
 ## 최근 Git 히스토리
 
 - `5b533c6` Add more character sprite atlases

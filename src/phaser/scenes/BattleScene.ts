@@ -100,13 +100,14 @@ export class BattleScene extends Phaser.Scene {
     const stage = this.add.image(width / 2, height / 2, "stage-finance-center");
     const stageScale = Math.max(width / stage.width, height / stage.height);
     stage.setScale(stageScale);
-    this.add.rectangle(width / 2, height / 2, width, height, 0x020617, 0.2);
-    this.add.rectangle(width / 2, 76, width, 140, 0x020617, 0.38);
-    this.add.rectangle(width / 2, height - 75, width, 112, 0x120905, 0.34);
-    this.add.rectangle(width / 2, height - 70, width, 8, 0xfacc15, 0.5);
-    this.add.rectangle(width / 2, height - 185, width, 96, 0x0f172a, 0.12);
-    this.add.circle(width / 2, 164, 66, 0x7f1d1d, 0.34);
-    this.add.circle(width / 2, 164, 42, 0xfacc15, 0.08);
+    this.add.rectangle(width / 2, height / 2, width, height, 0x020617, 0.24);
+    this.add.rectangle(width / 2, 76, width, 148, 0x030506, 0.46);
+    this.add.rectangle(width / 2, height - 75, width, 116, 0x120905, 0.42);
+    this.add.rectangle(width / 2, height - 128, width - 56, 2, 0xd6a447, 0.52);
+    this.add.rectangle(width / 2, height - 70, width, 6, 0xd6a447, 0.42);
+    this.add.rectangle(width / 2, height - 185, width, 96, 0x0e5560, 0.1);
+    this.add.circle(width / 2, 164, 68, 0x681214, 0.36).setStrokeStyle(2, 0xd6a447, 0.18);
+    this.add.circle(width / 2, 164, 42, 0xd6a447, 0.09);
   }
 
   private createTopHud() {
@@ -120,41 +121,56 @@ export class BattleScene extends Phaser.Scene {
     const panelY = 28;
     const hpY = 82;
 
-    this.add.rectangle(width / 2, 76, width - 40, 116, 0x0b0f19, 0.86).setStrokeStyle(2, 0x8b5a2b);
+    this.add.rectangle(width / 2, 76, width - 40, 116, 0x07080c, 0.9).setStrokeStyle(2, 0xd6a447, 0.82);
+    this.add.rectangle(width / 2, 24, width - 68, 2, 0xf8d36c, 0.54);
+    this.add.rectangle(width / 2, 128, width - 68, 2, 0x0e5560, 0.5);
+    this.add.rectangle(width / 2, 76, 5, 98, 0x8b5a2b, 0.72);
+    this.add.circle(width / 2, 76, 36, 0x160807, 0.92).setStrokeStyle(2, 0xd6a447, 0.7);
+    this.add.circle(width / 2, 76, 24, 0x681214, 0.74).setStrokeStyle(1, 0x0e5560, 0.42);
     this.drawPortrait(left, 86, 76);
     this.drawPortrait(right, width - 86, 76);
 
     this.add
       .text(142, panelY, this.fighterLabel(left), {
-        fontFamily: "sans-serif",
+        fontFamily: "Georgia, serif",
         fontSize: "18px",
         color: "#fff7d6",
+        stroke: "#2a0708",
+        strokeThickness: 3,
       })
       .setOrigin(0, 0.5);
     this.add
       .text(width - 142, panelY, this.fighterLabel(right), {
-        fontFamily: "sans-serif",
+        fontFamily: "Georgia, serif",
         fontSize: "18px",
         color: "#fff7d6",
+        stroke: "#2a0708",
+        strokeThickness: 3,
       })
       .setOrigin(1, 0.5);
 
-    this.add.rectangle(302, hpY, 322, 20, 0x2a1714).setStrokeStyle(2, 0x57341f);
-    this.add.rectangle(width - 302, hpY, 322, 20, 0x2a1714).setStrokeStyle(2, 0x57341f);
+    this.add.rectangle(302, hpY, 328, 24, 0x08090c, 0.96).setStrokeStyle(2, 0x8b5a2b, 0.86);
+    this.add.rectangle(width - 302, hpY, 328, 24, 0x08090c, 0.96).setStrokeStyle(2, 0x8b5a2b, 0.86);
+    this.add.rectangle(302, hpY, 318, 12, 0x2a0708, 0.82);
+    this.add.rectangle(width - 302, hpY, 318, 12, 0x2a0708, 0.82);
     const leftBar = this.add.rectangle(141, hpY, 322, 16, 0x16a34a).setOrigin(0, 0.5);
     const rightBar = this.add.rectangle(width - 141, hpY, 322, 16, 0x16a34a).setOrigin(1, 0.5);
     const leftHpText = this.add
       .text(302, hpY + 30, `${left.maxHp} / ${left.maxHp}`, {
-        fontFamily: "sans-serif",
+        fontFamily: "Georgia, serif",
         fontSize: "14px",
         color: "#d6f7de",
+        stroke: "#020304",
+        strokeThickness: 3,
       })
       .setOrigin(0.5);
     const rightHpText = this.add
       .text(width - 302, hpY + 30, `${right.maxHp} / ${right.maxHp}`, {
-        fontFamily: "sans-serif",
+        fontFamily: "Georgia, serif",
         fontSize: "14px",
         color: "#d6f7de",
+        stroke: "#020304",
+        strokeThickness: 3,
       })
       .setOrigin(0.5);
 
@@ -162,15 +178,17 @@ export class BattleScene extends Phaser.Scene {
       .text(width / 2, 42, this.roundLabel(this.replay.round), {
         fontFamily: "serif",
         fontSize: "22px",
-        color: "#facc15",
+        color: "#f8d36c",
+        stroke: "#2a0708",
+        strokeThickness: 4,
       })
       .setOrigin(0.5);
     this.add
       .text(width / 2, 82, "VS", {
         fontFamily: "serif",
         fontSize: "34px",
-        color: "#ffffff",
-        stroke: "#7f1d1d",
+        color: "#fff8dc",
+        stroke: "#681214",
         strokeThickness: 5,
       })
       .setOrigin(0.5);
@@ -179,15 +197,16 @@ export class BattleScene extends Phaser.Scene {
   }
 
   private drawPortrait(fighter: Fighter, x: number, y: number) {
-    this.add.rectangle(x, y, 100, 100, 0x141414).setDepth(1);
+    this.add.rectangle(x, y, 106, 106, 0x08090c, 0.96).setStrokeStyle(3, 0xd6a447, 0.86).setDepth(1);
+    this.add.rectangle(x, y, 94, 94, 0x050608, 0.86).setStrokeStyle(1, 0x0e5560, 0.45).setDepth(1.5);
     const portraitKey =
       this.awakenedFighterIds.has(fighter.id) && fighter.awakened
         ? `${fighter.portraitKey}-awakened`
         : fighter.portraitKey;
     const portrait = this.add.image(x, y, portraitKey).setDepth(2);
     this.fitImageInside(portrait, 92, 92);
-    this.add.rectangle(x, y, 96, 96, fighter.palette.accent, 0.08).setDepth(3);
-    this.add.rectangle(x, y, 100, 100, 0x000000, 0).setStrokeStyle(4, fighter.palette.accent).setDepth(4);
+    this.add.rectangle(x, y, 96, 96, fighter.palette.accent, 0.1).setDepth(3);
+    this.add.rectangle(x, y, 100, 100, 0x000000, 0).setStrokeStyle(2, fighter.palette.accent, 0.82).setDepth(4);
     if (this.awakenedFighterIds.has(fighter.id)) {
       this.add
         .text(x, y + 62, "각성", {
@@ -195,7 +214,7 @@ export class BattleScene extends Phaser.Scene {
           fontSize: "12px",
           fontStyle: "bold",
           color: "#fef08a",
-          backgroundColor: "#4a3112",
+          backgroundColor: "#3b0b0d",
           padding: { x: 6, y: 2 },
         })
         .setOrigin(0.5)

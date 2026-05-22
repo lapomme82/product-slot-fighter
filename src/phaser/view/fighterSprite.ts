@@ -55,10 +55,10 @@ export function createFighterView(
   const displayName = awakened && fighter.awakened ? fighter.awakened.name : fighter.name;
   const nameText = scene.add
     .text(0, 94, displayName, {
-      fontFamily: "sans-serif",
+      fontFamily: "Georgia, serif",
       fontSize: "18px",
       color: "#fff7d6",
-      stroke: "#000000",
+      stroke: "#2a0708",
       strokeThickness: 4,
     })
     .setOrigin(0.5);
@@ -66,16 +66,16 @@ export function createFighterView(
   const slotFrame = scene.add.image(0, SLOT_FRAME_Y, slotFrameKey).setScale(SLOT_FRAME_SCALE);
   const slotResultText = scene.add
     .text(0, -211, "", {
-      fontFamily: "sans-serif",
+      fontFamily: "Georgia, serif",
       fontSize: "14px",
       color: "#fff7d6",
-      stroke: "#000000",
+      stroke: "#2a0708",
       strokeThickness: 3,
       align: "center",
     })
     .setOrigin(0.5);
   const reelBacks = SLOT_REEL_OFFSETS.map((offsetX) =>
-    scene.add.rectangle(offsetX, SLOT_REEL_CENTER_Y, 35.1, 45.5, 0x020617, 0.82).setStrokeStyle(1, 0x2c1b13),
+    scene.add.rectangle(offsetX, SLOT_REEL_CENTER_Y, 35.1, 45.5, 0x040608, 0.86).setStrokeStyle(1, 0xd6a447, 0.38),
   );
   const reelIcons = SLOT_REEL_OFFSETS.map((offsetX) =>
     scene.add.image(offsetX, SLOT_REEL_CENTER_Y, "slot-weak-attack").setScale(SLOT_REEL_ICON_SCALE),
